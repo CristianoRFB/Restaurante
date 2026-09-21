@@ -22,6 +22,13 @@ describe('Firestore rules do Baru', () => {
     await assertFails(getDoc(doc(guest, 'reservations/public-test')));
   });
 
+  it('permitem consulta pública somente pela cópia opaca de confirmação', async () => {
+    const guest = env.unauthenticatedContext().firestore();
+    await assertSucceeds(setDoc(doc(guest, 'publicReservations/BRU-TEST'), reservation));
+    await assertSucceeds(getDoc(doc(guest, 'publicReservations/BRU-TEST')));
+    await assertFails(getDoc(doc(guest, 'publicReservations/OUTRO-CODIGO')));
+  });
+
   it('permitem equipe ler e atualizar, mas bloqueiam exclusão para atendimento', async () => {
     const service = env.authenticatedContext('service').firestore();
     await assertSucceeds(getDoc(doc(service, 'reservations/public-test')));

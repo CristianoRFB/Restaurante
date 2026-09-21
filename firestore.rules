@@ -23,6 +23,13 @@ service cloud.firestore {
       allow update: if isStaff() && validReservation(request.resource.data);
       allow delete: if isManager();
     }
+    match /publicReservations/{code} {
+      allow get: if resource.data.code == code;
+      allow list: if false;
+      allow create: if !signedIn() && validReservation(request.resource.data);
+      allow update: if isStaff() && request.resource.data.code == resource.data.code && validReservation(request.resource.data);
+      allow delete: if isManager();
+    }
     match /conversations/{id} { allow read, create, update: if isStaff(); allow delete: if isManager(); }
     match /siteContent/{id} { allow read: if true; allow write: if isManager(); }
     match /users/{uid} { allow read: if signedIn() && (request.auth.uid == uid || isAdmin()); allow create, update, delete: if isAdmin(); }
