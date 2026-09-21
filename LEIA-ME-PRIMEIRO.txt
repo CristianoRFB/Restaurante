@@ -1,0 +1,10 @@
+Este repositório é o produto Baru Gastronomia.
+
+O modo demonstração funciona localmente com dados fictícios. As 20 imagens em docs/referencias-visuais são referências de direção visual; não são backgrounds de interface.
+
+Comece com:
+
+  npm install
+  npm run dev
+
+Leia README.md e docs/ para arquitetura, Firebase, segurança, testes e deploy.

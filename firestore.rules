@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function role() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null; }
+    function isStaff() { return role() in ['ADMIN', 'MANAGER', 'CASHIER', 'SERVICE']; }
+    function isManager() { return role() in ['ADMIN', 'MANAGER']; }
+    function isAdmin() { return role() == 'ADMIN'; }
+    function validMoment(data) { return data.name is string && data.description is string && data.imageUrl is string && data.active is bool && data.displayOrder is int; }
+    function validMenuItem(data) { return data.name is string && data.description is string && data.categoryId is string && data.priceCents is int && data.priceCents >= 0 && data.imageUrl is string && data.active is bool && data.featured is bool && data.displayOrder is int && data.serviceMomentIds is list; }
+    function validReservation(data) { return data.code is string && data.date is string && data.time is string && data.partySize is int && data.partySize > 0 && data.partySize <= 20 && data.customerName is string && data.whatsapp is string && data.note is string && data.status in ['NEW', 'CONFIRMED', 'ARRIVED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']; }
+
+    match /restaurantSettings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /serviceMoments/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update, delete: if isAdmin() && validMoment(request.resource.data); }
+    match /menuCategories/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update, delete: if isManager(); }
+    match /menuItems/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update: if isManager() && validMenuItem(request.resource.data); allow delete: if isAdmin(); }
+    match /areas/{id} { allow read: if isStaff(); allow write: if isManager(); }
+    match /tables/{id} { allow read: if isStaff(); allow write: if isManager(); }
+    match /customers/{id} { allow read: if isStaff(); allow create, update: if isStaff(); allow delete: if isManager(); }
+    match /reservations/{id} {
+      allow read: if isStaff();
+      allow create: if (isStaff() || (!signedIn() && request.resource.data.status == 'NEW')) && validReservation(request.resource.data);
+      allow update: if isStaff() && validReservation(request.resource.data);
+      allow delete: if isManager();
+    }
+    match /conversations/{id} { allow read, create, update: if isStaff(); allow delete: if isManager(); }
+    match /siteContent/{id} { allow read: if true; allow write: if isManager(); }
+    match /users/{uid} { allow read: if signedIn() && (request.auth.uid == uid || isAdmin()); allow create, update, delete: if isAdmin(); }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

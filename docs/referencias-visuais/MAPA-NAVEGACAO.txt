@@ -1,0 +1,107 @@
+BARU GASTRONOMIA — MAPA OFICIAL DE NAVEGAÇÃO
+
+ÁREA PÚBLICA
+
+/
+  Landing page.
+  Objetivo: apresentar marca, experiência, momentos do dia, chef, ambiente e levar para cardápio ou reserva.
+
+/cardapio
+  Cardápio público.
+  Categorias, busca, itens, preços, disponibilidade, destaques e CTA de reserva.
+
+/reservar
+  Fluxo de criação de reserva.
+  Data -> horário -> pessoas -> dados do cliente -> observação -> enviar solicitação.
+
+/reserva/[codigo]
+  Confirmação/detalhe da solicitação.
+  Código, data, horário, pessoas, nome, WhatsApp e status.
+  Ações: abrir WhatsApp, nova reserva, voltar ao início.
+
+
+ÁREA ADMINISTRATIVA
+
+/admin/login
+  Login da equipe.
+  Deve permitir autenticação real quando Firebase Auth existir e "modo demo" sem Firebase.
+
+/admin
+  Dashboard / operação do dia.
+  KPIs, próximas reservas, pendências, fluxo do dia e ações rápidas.
+
+/admin/reservas
+  Central de reservas.
+  Busca, filtros, lista, status e painel de detalhe.
+
+/admin/reservas/nova
+  Criação rápida de reserva pelo caixa/gerente.
+
+/admin/reservas/[id]/editar
+  Edição da reserva, mudança de status, mesa, data, horário, pessoas e observações.
+
+/admin/agenda
+  Visão operacional por horário e área.
+
+/admin/clientes
+  CRM leve de clientes.
+
+/admin/clientes/[id]
+  Perfil do cliente, histórico, preferências, observações e datas importantes.
+
+/admin/cardapio
+  Gestão de categorias e itens do cardápio.
+
+/admin/mesas
+  Gestão de áreas, mesas, capacidades e estados.
+
+/admin/atendimento
+  Atendimento/WhatsApp.
+  Inicialmente funciona como camada de demonstração e preparação para integração oficial.
+
+/admin/equipe
+  Usuários, funções e permissões.
+
+/admin/relatorios
+  Métricas de reservas, pessoas, cancelamentos, no-show, horários e dias fortes.
+
+/admin/conteudo
+  CMS leve do site público: hero, chef, fotos, textos e redes sociais.
+
+/admin/configuracoes
+  Horários, WhatsApp, endereço, capacidade, áreas/mesas, mensagens e configurações operacionais.
+
+/admin/setup
+  Tela/estado de modo demonstração e configuração do Firebase.
+  Não deve bloquear os demais módulos quando o backend não estiver configurado.
+
+
+FLUXO PRINCIPAL DO CLIENTE
+
+Home -> Cardápio -> Reservar -> Confirmação
+Home -> Reservar -> Confirmação
+Cardápio -> Reservar -> Confirmação
+
+
+FLUXO PRINCIPAL DA EQUIPE
+
+Login -> Dashboard
+Dashboard -> Reservas -> Detalhe/Edição
+Dashboard -> Agenda
+Reservas -> Nova reserva
+Reservas -> Cliente -> Histórico
+Dashboard -> Atendimento -> Criar/confirmar reserva
+Cardápio -> Editar item
+Configurações -> Ajustar operação
+
+
+REGRAS DE NAVEGAÇÃO
+
+- Desktop admin: sidebar persistente.
+- Mobile admin: bottom navigation com Início, Reservas, Agenda e Mais; páginas secundárias entram por "Mais" ou links contextuais.
+- Nunca duplicar uma mesma função em três rotas diferentes.
+- "Nova reserva" deve estar acessível do Dashboard, Reservas, Agenda, Cliente e Atendimento.
+- "Falar no WhatsApp" deve estar acessível em reserva e cliente.
+- "Ver cliente" deve estar acessível a partir da reserva.
+- "Ver reserva" deve estar acessível a partir do cliente.
+- Quando Firebase não existir, usar repository mock/local; a navegação continua funcionando.

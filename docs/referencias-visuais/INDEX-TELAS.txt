@@ -1,0 +1,81 @@
+BARU GASTRONOMIA — ÍNDICE DAS REFERÊNCIAS VISUAIS
+
+01. Landing pública
+    Rota: /
+    Referência: 01-public-home.png
+
+02. Cardápio público
+    Rota: /cardapio
+    Referência: 02-public-cardapio.png
+
+03. Reserva pública
+    Rota: /reservar
+    Referência: 03-public-reserva.png
+
+04. Confirmação/detalhe da reserva
+    Rota: /reserva/[codigo]
+    Referência: 04-public-confirmacao-reserva.png
+
+05. Login do admin
+    Rota: /admin/login
+    Referência: 05-admin-login.png
+
+06. Dashboard / operação do dia
+    Rota: /admin
+    Referência: 06-admin-dashboard.png
+
+07. Reservas
+    Rota: /admin/reservas
+    Referência: 07-admin-reservas.png
+
+08. Nova reserva pelo admin
+    Rota: /admin/reservas/nova
+    Referência: 08-admin-nova-reserva.png
+
+09. Editar reserva
+    Rota: /admin/reservas/[id]/editar
+    Referência: 09-admin-editar-reserva.png
+
+10. Agenda
+    Rota: /admin/agenda
+    Referência: 10-admin-agenda.png
+
+11. Clientes
+    Rota: /admin/clientes
+    Referência: 11-admin-clientes.png
+
+12. Detalhe do cliente
+    Rota: /admin/clientes/[id]
+    Referência: 12-admin-cliente-detalhe.png
+
+13. Gestão de cardápio
+    Rota: /admin/cardapio
+    Referência: 13-admin-cardapio.png
+
+14. Mesas e áreas
+    Rota: /admin/mesas
+    Referência: 14-admin-mesas-areas.png
+
+15. Atendimento / WhatsApp
+    Rota: /admin/atendimento
+    Referência: 15-admin-atendimento-whatsapp.png
+
+16. Equipe e permissões
+    Rota: /admin/equipe
+    Referência: 16-admin-equipe.png
+
+17. Relatórios
+    Rota: /admin/relatorios
+    Referência: 17-admin-relatorios.png
+
+18. Conteúdo do site
+    Rota: /admin/conteudo
+    Referência: 18-admin-conteudo-site.png
+
+19. Configurações
+    Rota: /admin/configuracoes
+    Referência: 19-admin-configuracoes.png
+
+20. Modo demo / Firebase não configurado
+    Rota: /admin/setup
+    Referência: 20-admin-modo-demo-firebase.png

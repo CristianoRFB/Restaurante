@@ -1,0 +1,27 @@
+BARU GASTRONOMIA — MANIFESTO DAS REFERÊNCIAS VISUAIS
+
+Total esperado: 20 imagens
+Total verificado: 20 imagens
+
+Todas foram abertas e validadas como PNG.
+
+01-public-home.png | 1448x1086 | 2137253 bytes | sha256=58b8fa74f7f2e72d1c582e3728a8302a83349b0df6cddfbfadc7e2d033dfc7c3
+02-public-cardapio.png | 1448x1086 | 1988191 bytes | sha256=79c3459467e603b7c4de28bd86548c957dedab5a0db89cdb369aa17d717015b2
+03-public-reserva.png | 1448x1086 | 1760008 bytes | sha256=a7a9be20ca9484cc004555c0a25738f13fa473265d3060eaf85ab5850c4e3be9
+04-public-confirmacao-reserva.png | 1448x1086 | 1881146 bytes | sha256=6f62d681fa814fc3fd03e693585e17b413d99ccdac37b06bb611fe5e1baac574
+05-admin-login.png | 1448x1086 | 1778967 bytes | sha256=cd6a1f5fa1cf82c888a6fb88a6ff151268c990354ca672c100bd7fe255123ad3
+06-admin-dashboard.png | 1448x1086 | 1692613 bytes | sha256=bb7d3f502e22fcbc39ae80bf3d6f173010bb92e186c55eea2553798298a9a9ba
+07-admin-reservas.png | 1448x1086 | 1696137 bytes | sha256=29f4ac0637db81182ac8708b3582968e2f7a23b7a81a51a4a9d33b563ddd92fa
+08-admin-nova-reserva.png | 1448x1086 | 1560731 bytes | sha256=9645df260cf7b3f4210f3ff2c7544fbbdda57167b1a1a909d096ddf2a68bf110
+09-admin-editar-reserva.png | 1448x1086 | 1664877 bytes | sha256=b7bb149c27fa985a41f6f21967bf45d6a982429801605784f7b655552d08463f
+10-admin-agenda.png | 1448x1086 | 1674380 bytes | sha256=b8c73c251b89b11454f587db2d4080c887a6585bf2204315bcb036e8eb5aca98
+11-admin-clientes.png | 1448x1086 | 1685565 bytes | sha256=903330251c58208708b61e15b806a3a59b65f6e0d0e3f3c616ff96e973065857
+12-admin-cliente-detalhe.png | 1448x1086 | 1724169 bytes | sha256=f90ebd35ceaad1ffe5d8198abfb44713ea5660c37e661579477bbb09a6ac5b8f
+13-admin-cardapio.png | 1448x1086 | 1727186 bytes | sha256=249740f9a475aa1a335549bfd91c55a47a7ed4601f01765ae576aef538e84012
+14-admin-mesas-areas.png | 1448x1086 | 1757490 bytes | sha256=abcca423ecf7b29487eccc76e613b054bc6eae91efcce10687e7a6d9b72ec315
+15-admin-atendimento-whatsapp.png | 1448x1086 | 1791636 bytes | sha256=0686f358ff7477fc04b9bec03a2880bf12b16a91ca6eb39194e0510eabb8fc3b
+16-admin-equipe.png | 1448x1086 | 1645601 bytes | sha256=7f32556105372fd390d7328bcf04b13a00c9bf0ec6006c5f86a68787cedeadeb
+17-admin-relatorios.png | 1448x1086 | 1640212 bytes | sha256=c9eec4f03edc07971d76eae17a05d5911b6c174d917d94a0e6bc379b1c917fda
+18-admin-conteudo-site.png | 1448x1086 | 1823122 bytes | sha256=bf2e2950a20ad4b422a55c29c27c34c8d25cde206a403ccba12cc71ab10382a0
+19-admin-configuracoes.png | 1448x1086 | 1680196 bytes | sha256=ebd02f3fff2e083a49a9f806eb317cec21828f12f13e1b638ac46b5edbebb236
+20-admin-modo-demo-firebase.png | 1448x1086 | 1876502 bytes | sha256=2a9a2eb48c24c497d3c76fb282d6d5288e9533c6a7dd50062004dcba9004a877

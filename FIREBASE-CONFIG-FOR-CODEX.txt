@@ -1,0 +1,11 @@
+BARU GASTRONOMIA — CONFIGURAÇÃO FIREBASE
+
+Projeto: restaurante-5665d
+apiKey=AIzaSyCil6QFJ_WFRtFMgMfwIFjZAUM-a1NPI2U
+authDomain=restaurante-5665d.firebaseapp.com
+projectId=restaurante-5665d
+storageBucket=restaurante-5665d.firebasestorage.app
+messagingSenderId=755014050914
+appId=1:755014050914:web:73ef89f5a1c048e7e31d3b
+
+Esta é configuração pública do SDK Web, não uma credencial administrativa. Não adicionar service accounts, tokens ou arquivos .env reais ao Git.
