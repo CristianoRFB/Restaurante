@@ -11,20 +11,20 @@ O fluxo Baru foi implementado e publicado. As rotas públicas são `/`, `/cardap
 
 | Área | Nota | Evidência e causa de nota abaixo de 9 |
 | --- | ---: | --- |
-| Funcionalidade | 8 | Fluxos públicos e admin demo funcionam; reserva pública e login já possuem adapter Firebase, enquanto os módulos administrativos restantes continuam demo/local. |
+| Funcionalidade | 8 | Fluxos públicos e admin demo funcionam; reserva pública, dashboard/lista/edição de reservas e login já usam adapters Firebase no modo real, enquanto os módulos de conteúdo/cardápio/CRM restantes continuam demo/local. |
 | UX desktop | 8 | Design system editorial aplicado nas 20 rotas; QA visual automatizado ficou bloqueado pela ausência de backend IAB nesta sessão. |
 | UX mobile | 8 | Layouts responsivos e bottom navigation implementados; falta validação visual real em dispositivo. |
 | Fidelidade às referências | 8 | Estrutura, paleta, tipografia e conteúdo equivalente foram implementados; as fotos são URLs de demonstração e não os assets finais do restaurante. |
 | Personalização Baru | 9 | “Momentos do Baru” está configurável e integrado em home/cardápio/conteúdo demo. |
 | Responsividade | 8 | Breakpoints, tabelas com overflow, formulário móvel e navegação inferior implementados; teste de viewport automatizado ainda falta. |
 | Acessibilidade | 8 | Labels, foco visível, status textuais, alt text, reduced motion e touch targets foram tratados; falta auditoria com leitor de tela. |
-| Segurança | 7 | Rules foram publicadas/testadas; Auth real, App Check, rate limiting e CSP/headers ainda dependem do ambiente final. |
-| Firebase | 8 | Projeto `restaurante-5665d`, Rules e índices estão publicados; SDK modular, Auth por e-mail/senha e repository de reservas estão disponíveis por modo de ambiente. |
-| Integridade de dados | 8 | Validações e limites de reserva estão cobertos; concorrência real de duas sessões ainda precisa de transação no repository Firebase. |
+| Segurança | 8 | Rules foram publicadas/testadas com schema estrito, cópia pública mínima e proteção de função; Auth real, App Check, rate limiting/overbooking e CSP/headers ainda dependem do ambiente final. |
+| Firebase | 8 | Projeto `restaurante-5665d`, Rules e índices estão publicados; SDK modular, Auth por e-mail/senha, sessão revalidada e repository de reservas estão disponíveis por modo de ambiente. |
+| Integridade de dados | 8 | Validação estrita, cópia operacional protegida e idempotência transacional cobrem reenvio/refresh; overbooking concorrente ainda precisa de controle server-side. |
 | Performance | 7 | Build verde e assets públicos antigos deixaram de ser empacotados; imagens externas, chunks acima de 500 kB e ausência de profiling/Lighthouse mantêm risco. |
 | Dependências | 7 | `npm audit` identificou 7 vulnerabilidades moderadas no conjunto herdado; não há correção automática aplicada sem validar impacto no stack. |
 | Qualidade de código | 8 | Domínio, dados, UI e módulos foram separados; alguns componentes de tela ainda são grandes e pedem extração incremental. |
-| Cobertura/qualidade de testes | 7 | 6 testes de domínio + 4 de Rules passam; ainda faltam testes de componentes, e2e e fuzzing de concorrência. |
+| Cobertura/qualidade de testes | 7 | 7 testes de domínio + 5 de Rules passam; ainda faltam testes de componentes, e2e e fuzzing de concorrência. |
 | Tratamento de erros | 7 | Formulários e estados vazios/erro estão tratados; timeout/offline de Firebase real ainda não está conectado. |
 | Offline/degradação | 8 | Modo demo local degrada sem backend; o comportamento offline da integração Firebase ainda não foi validado. |
 | Cloudflare/deploy | 8 | Worker novo `baru-gastronomia` foi publicado e smoke-tested; a URL padrão ainda usa um namespace externo legado da conta. |
@@ -41,9 +41,10 @@ As correções possíveis dentro do escopo foram feitas antes da nova rodada de 
 - `npm run lint` — passou.
 - `npm run typecheck` — passou.
 - `npm test` — 2 arquivos, 6 testes passaram.
-- `npm run test:rules` — 1 arquivo, 4 testes passaram no emulador.
+- `npm run test:rules` — 1 arquivo, 5 testes passaram no emulador.
 - `npm run build` — passou; 20 rotas Baru foram geradas.
 - `npm run ci` — passou novamente com lint, typecheck, testes e build.
+- `npm audit --omit=dev --json` — nenhuma vulnerabilidade em dependências de produção; o audit completo reporta 7 moderadas apenas na cadeia de `firebase-tools` de desenvolvimento.
 - Smoke local e remoto — `/`, `/cardapio`, `/reservar`, `/admin/login` e `/admin` responderam HTTP 200.
 - `npx firebase deploy --only firestore:indexes --force --project restaurante-5665d` — índices Baru publicados e índices legados removidos.
 - `npx firebase deploy --only firestore:rules --project restaurante-5665d` — Rules atualizadas com confirmação pública opaca.
@@ -57,9 +58,9 @@ As correções possíveis dentro do escopo foram feitas antes da nova rodada de 
 
 ## Riscos e bloqueios restantes
 
-1. Criar os usuários Auth e documentos `users/{uid}` de produção; o adapter já está ligado ao SDK quando `NEXT_PUBLIC_DATA_MODE=firebase`.
+1. Habilitar o provedor e criar os usuários Auth/documentos `users/{uid}` de produção; o adapter já está ligado ao SDK quando `NEXT_PUBLIC_DATA_MODE=firebase`.
 2. Cadastrar domínio final e ativar App Check; não há chave App Check fornecida.
-3. Adicionar rate limiting/antiabuso e transações de disponibilidade para reservas concorrentes.
-4. Ligar os repositories Firebase dos módulos administrativos restantes.
+3. Adicionar rate limiting/antiabuso e controle server-side de disponibilidade para reservas concorrentes.
+4. Ligar os repositories Firebase dos módulos administrativos restantes (cardápio, clientes, conteúdo, mesas, equipe e conversas).
 5. Configurar domínio público próprio no Cloudflare para remover a dependência do namespace externo da conta.
 6. Repetir QA visual/a11y com navegador/dispositivo real; o backend IAB não estava disponível nesta sessão.

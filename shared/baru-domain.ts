@@ -1,4 +1,4 @@
-export type ServiceMomentId = 'cafe' | 'a-la-carte' | 'happy-hour';
+export type ServiceMomentId = string;
 export type ReservationStatus = 'NEW' | 'CONFIRMED' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 export type ConversationStatus = 'NEW' | 'IN_PROGRESS' | 'WAITING' | 'DONE';
 export type Role = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'SERVICE';
@@ -50,6 +50,20 @@ export interface Reservation {
   momentId?: ServiceMomentId;
   source: 'SITE' | 'WHATSAPP' | 'ADMIN';
   history: ReservationHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+  idempotencyKey?: string;
+}
+
+export interface PublicReservation {
+  id: string;
+  code: string;
+  date: string;
+  time: string;
+  partySize: number;
+  customerName: string;
+  whatsapp: string;
+  status: ReservationStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -163,7 +177,7 @@ export function formatDate(date: string): string {
 }
 
 export function makeReservationCode(seed = Date.now()): string {
-  return `BRU-${String(seed).slice(-4)}`;
+  return `BRU-${Math.abs(seed).toString(36).toUpperCase().padStart(8, '0').slice(-8)}`;
 }
 
 export function normalizeWhatsapp(value: string): string {
@@ -174,12 +188,14 @@ export function normalizeWhatsapp(value: string): string {
 
 export function validateReservation(input: Pick<Reservation, 'date' | 'time' | 'partySize' | 'customerName' | 'whatsapp' | 'note'>, settings: RestaurantSettings): string[] {
   const errors: string[] = [];
-  const date = new Date(`${input.date}T${input.time || '00:00'}:00`);
+  const dateParts = input.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const timeIsValid = /^([01]\d|2[0-3]):[0-5]\d$/.test(input.time);
+  const date = dateParts ? new Date(Number(dateParts[1]), Number(dateParts[2]) - 1, Number(dateParts[3])) : new Date(Number.NaN);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || Number.isNaN(date.getTime())) errors.push('Escolha uma data válida.');
+  if (!dateParts || Number.isNaN(date.getTime()) || date.getFullYear() !== Number(dateParts[1]) || date.getMonth() !== Number(dateParts[2]) - 1 || date.getDate() !== Number(dateParts[3])) errors.push('Escolha uma data válida.');
   else if (date < today) errors.push('A data da reserva não pode estar no passado.');
-  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time)) errors.push('Escolha um horário válido.');
+  if (!timeIsValid) errors.push('Escolha um horário válido.');
   if (!Number.isInteger(input.partySize) || input.partySize < 1 || input.partySize > settings.maxPartySize) errors.push(`Informe de 1 a ${settings.maxPartySize} pessoas.`);
   if (input.customerName.trim().length < 2 || input.customerName.trim().length > 100) errors.push('Informe seu nome completo.');
   try { normalizeWhatsapp(input.whatsapp); } catch (error) { errors.push(error instanceof Error ? error.message : 'WhatsApp inválido.'); }

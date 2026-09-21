@@ -1,6 +1,7 @@
 'use client';
 
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider, type AppCheck } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
 
@@ -24,12 +25,18 @@ export function isFirebaseDataMode(): boolean {
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let firestore: Firestore | null = null;
+let appCheck: AppCheck | null = null;
 let emulatorsConnected = false;
 
 if (firebaseConfigured) {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   firestore = getFirestore(app);
+
+  const appCheckSiteKey = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY;
+  if (appCheckSiteKey && typeof window !== 'undefined') {
+    appCheck = initializeAppCheck(app, { provider: new ReCaptchaV3Provider(appCheckSiteKey), isTokenAutoRefreshEnabled: true });
+  }
 
   if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true' && !emulatorsConnected) {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
@@ -38,4 +45,4 @@ if (firebaseConfigured) {
   }
 }
 
-export { app as firebaseApp, auth as firebaseAuth, firestore as firebaseDb };
+export { app as firebaseApp, auth as firebaseAuth, firestore as firebaseDb, appCheck as firebaseAppCheck };

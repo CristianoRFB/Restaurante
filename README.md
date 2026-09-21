@@ -35,7 +35,7 @@ Públicas: `/`, `/cardapio`, `/reservar`, `/reserva/[codigo]`.
 
 Admin: `/admin/login`, `/admin`, `/admin/reservas`, `/admin/reservas/nova`, `/admin/reservas/[id]/editar`, `/admin/agenda`, `/admin/clientes`, `/admin/clientes/[id]`, `/admin/cardapio`, `/admin/mesas`, `/admin/atendimento`, `/admin/equipe`, `/admin/relatorios`, `/admin/conteudo`, `/admin/configuracoes`, `/admin/setup`.
 
-O login oferece modo demonstração com dados locais. O estado do painel fica protegido por sessão de demonstração no navegador; a autorização do backend está descrita em `docs/SECURITY.md` e nas Firestore Rules.
+O login oferece modo demonstração com dados locais. Com `NEXT_PUBLIC_DATA_MODE=firebase`, o Auth revalida a sessão e a função do usuário; a autorização do backend está descrita em `docs/SECURITY.md` e nas Firestore Rules.
 
 ## Firebase
 
@@ -47,12 +47,11 @@ npm run test:rules
 npm run deploy:firebase
 ```
 
-O comando de deploy do Firebase publica somente Rules e índices. A aplicação web é publicada no Cloudflare Worker `baru-gastronomia`.
+O comando de deploy do Firebase publica somente Rules e índices. A aplicação web é publicada no Cloudflare Worker `baru-gastronomia`. O modo real já cobre autenticação e o fluxo de reservas; módulos de conteúdo e gestão continuam demo até seus repositories serem ligados.
 
 ## Cloudflare
 
 ```bash
-npm run build
 npm run build
 npx wrangler deploy --config wrangler.jsonc
 ```
@@ -64,7 +63,7 @@ O deploy exige autenticação do Wrangler e variáveis públicas do Firebase con
 - `app/`: rotas Vinext/React.
 - `components/`: shell público, shell admin e módulos de operação.
 - `lib/baru-data.ts`: seeds demo explícitos.
-- `lib/baru-repository.ts`: camada local de persistência e ponto de troca por Firebase.
+- `lib/baru-repository.ts`: camada local e adapters Firebase para Auth, reservas, confirmação pública e leituras operacionais.
 - `shared/baru-domain.ts`: entidades, validações, status e formatação.
 - `firestore.rules`: autorização por papel e validações de dados.
 

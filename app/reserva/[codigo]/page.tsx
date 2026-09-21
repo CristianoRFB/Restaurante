@@ -6,10 +6,10 @@ import { CopyButton, LinkButton, StatusBadge, SuccessMark } from '@/components/b
 import { PublicLayout, PageHero } from '@/components/public-shell';
 import { photoUrls } from '@/lib/baru-data';
 import { buildWhatsappLink, findReservationByCode } from '@/lib/baru-repository';
-import { formatDate, type Reservation } from '@/shared/baru-domain';
+import { formatDate, type PublicReservation } from '@/shared/baru-domain';
 
 export default function ReservationConfirmation({ params }: { params: { codigo: string } }) {
-  const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [reservation, setReservation] = useState<PublicReservation | null>(null);
   useEffect(() => { let active = true; findReservationByCode(params.codigo).then((found) => { if (active) setReservation(found); }).catch(() => { if (active) setReservation(null); }); return () => { active = false; }; }, [params.codigo]);
   if (!reservation) return <PublicLayout><main><PageHero eyebrow="Baru Gastronomia" title="Reserva não encontrada." description="Confira o código informado ou faça uma nova solicitação." imageUrl={photoUrls.restaurant}><LinkButton href="/reservar">Nova reserva <ArrowRight size={16} /></LinkButton></PageHero></main></PublicLayout>;
   const whatsappMessage = `Olá! Gostaria de falar sobre a reserva ${reservation.code}.`;

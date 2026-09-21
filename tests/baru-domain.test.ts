@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeWhatsapp, validateReservation } from '@/shared/baru-domain';
+import { makeReservationCode, normalizeWhatsapp, validateReservation } from '@/shared/baru-domain';
 import { settings } from '@/lib/baru-data';
 
 describe('domínio de reservas do Baru', () => {
@@ -14,5 +14,10 @@ describe('domínio de reservas do Baru', () => {
 
   it('normaliza telefone brasileiro sem expor formatação na persistência', () => {
     expect(normalizeWhatsapp('(45) 99988-7766')).toBe('5545999887766');
+  });
+
+  it('rejeita datas de calendário impossíveis e gera códigos sem sufixo previsível curto', () => {
+    expect(validateReservation({ date: '2026-02-31', time: '19:30', partySize: 2, customerName: 'Ana Clara', whatsapp: '5545999887766', note: '' }, settings)).toContain('Escolha uma data válida.');
+    expect(makeReservationCode(123456789)).toMatch(/^BRU-[A-Z0-9]{8}$/);
   });
 });

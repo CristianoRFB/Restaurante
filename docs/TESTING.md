@@ -1,6 +1,6 @@
 # Testes
 
-Os testes de domínio cobrem validação de data, horário, lotação, WhatsApp, observação e consistência dos seeds. O teste de Rules cobre criação pública, leitura/alteração de equipe e exclusão administrativa.
+Os testes de domínio cobrem validação de calendário, horário, lotação, WhatsApp, observação, códigos e consistência dos seeds. O teste de Rules cobre criação pública, confirmação por cópia opaca, idempotência, leitura/alteração de equipe e exclusão administrativa.
 
 ```bash
 npm run lint

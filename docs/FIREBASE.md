@@ -6,7 +6,7 @@ As variáveis públicas do SDK Web ficam nos arquivos de exemplo. Elas não conc
 
 O Firestore foi modelado para `restaurantSettings`, `serviceMoments`, `menuCategories`, `menuItems`, `areas`, `tables`, `customers`, `reservations`, `conversations`, `siteContent` e `users`. O adapter modular está disponível em `lib/firebase-client.ts` e `lib/baru-repository.ts`; o modo demo continua sendo o padrão e o modo real é ativado com `NEXT_PUBLIC_DATA_MODE=firebase`.
 
-No modo real, o login usa Firebase Authentication por e-mail/senha e consulta `users/{uid}` para obter a função; a reserva pública grava e consulta `reservations` pelo SDK Web. Os demais módulos mantêm seeds demo até seus repositories serem ligados gradualmente.
+No modo real, o login usa Firebase Authentication por e-mail/senha e consulta `users/{uid}` para obter a função; a reserva pública grava `reservations`, `publicReservations` e uma chave de idempotência pelo SDK Web. A confirmação lê somente a cópia pública sanitizada pelo código. Dashboard, lista e edição de reservas já consultam o repository Firebase; os demais módulos mantêm seeds demo até seus repositories serem ligados gradualmente.
 
 Para validar Rules localmente:
 

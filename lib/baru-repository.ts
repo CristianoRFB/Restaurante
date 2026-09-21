@@ -1,8 +1,8 @@
 import { reservations as seedReservations } from '@/lib/baru-data';
-import { doc, getDoc, writeBatch } from 'firebase/firestore';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { collection, doc, getDoc, getDocs, runTransaction, writeBatch } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type Unsubscribe } from 'firebase/auth';
 import { firebaseAuth, firebaseDb, isFirebaseDataMode } from '@/lib/firebase-client';
-import type { Reservation } from '@/shared/baru-domain';
+import type { PublicReservation, Reservation } from '@/shared/baru-domain';
 
 const RESERVATIONS_KEY = 'baru-reservations-v1';
 const SESSION_KEY = 'baru-admin-session-v1';
@@ -15,6 +15,26 @@ export interface AdminSession {
 }
 
 export type ReservationInput = Omit<Reservation, 'id' | 'code' | 'history' | 'createdAt' | 'updatedAt'>;
+
+function makeReservationIdentity(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function buildReservation(input: ReservationInput): Reservation {
+  const now = new Date().toISOString();
+  return {
+    ...input,
+    id: `res-${makeReservationIdentity()}`,
+    code: `BRU-${makeReservationIdentity().replace(/-/g, '').slice(0, 10).toUpperCase()}`,
+    history: [{ id: makeReservationIdentity(), status: input.status, label: 'Reserva criada', createdAt: now, by: input.source === 'ADMIN' ? 'Equipe' : 'Site' }],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function toPublicReservation(reservation: Reservation): PublicReservation {
+  return { id: reservation.id, code: reservation.code, date: reservation.date, time: reservation.time, partySize: reservation.partySize, customerName: reservation.customerName, whatsapp: reservation.whatsapp, status: reservation.status, createdAt: reservation.createdAt, updatedAt: reservation.updatedAt };
+}
 
 function cloneReservations(): Reservation[] {
   return seedReservations.map((reservation) => ({ ...reservation, history: reservation.history.map((entry) => ({ ...entry })) }));
@@ -32,42 +52,49 @@ export function readReservations(): Reservation[] {
   }
 }
 
+export async function readReservationsAsync(): Promise<Reservation[]> {
+  const db = firebaseDb;
+  if (!isFirebaseDataMode() || !db) return readReservations();
+  const snapshot = await getDocs(collection(db, 'reservations'));
+  return snapshot.docs.map((item) => item.data() as Reservation).sort((left, right) => `${left.date} ${left.time}`.localeCompare(`${right.date} ${right.time}`));
+}
+
 export function writeReservations(value: Reservation[]): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(RESERVATIONS_KEY, JSON.stringify(value));
 }
 
 export function createReservation(input: ReservationInput): Reservation {
-  const now = new Date().toISOString();
-  const reservation: Reservation = {
-    ...input,
-    id: `res-${crypto.randomUUID()}`,
-    code: `BRU-${crypto.randomUUID().slice(0, 4).toUpperCase()}`,
-    history: [{ id: crypto.randomUUID(), status: input.status, label: 'Reserva criada', createdAt: now, by: 'Site' }],
-    createdAt: now,
-    updatedAt: now,
-  };
+  const existing = input.idempotencyKey ? readReservations().find((item) => item.idempotencyKey === input.idempotencyKey) : undefined;
+  if (existing) return existing;
+  const reservation = buildReservation(input);
   const next = [reservation, ...readReservations()];
   writeReservations(next);
   return reservation;
 }
 
 export async function createReservationAsync(input: ReservationInput): Promise<Reservation> {
-  if (!isFirebaseDataMode() || !firebaseDb) return createReservation(input);
-  const now = new Date().toISOString();
-  const reservation: Reservation = {
-    ...input,
-    id: `res-${crypto.randomUUID()}`,
-    code: `BRU-${crypto.randomUUID().slice(0, 4).toUpperCase()}`,
-    history: [{ id: crypto.randomUUID(), status: input.status, label: 'Reserva criada', createdAt: now, by: 'Site' }],
-    createdAt: now,
-    updatedAt: now,
-  };
-  const batch = writeBatch(firebaseDb);
-  batch.set(doc(firebaseDb, 'reservations', reservation.id), reservation);
-  batch.set(doc(firebaseDb, 'publicReservations', reservation.code), reservation);
-  await batch.commit();
-  return reservation;
+  const db = firebaseDb;
+  if (!isFirebaseDataMode() || !db) return createReservation(input);
+  const idempotencyKey = input.idempotencyKey || makeReservationIdentity();
+  const requestRef = doc(db, 'reservationRequests', idempotencyKey);
+  return runTransaction(db, async (transaction) => {
+    const request = await transaction.get(requestRef);
+    if (request.exists()) {
+      const requestData = request.data() as { code?: string };
+      if (!requestData.code) throw new Error('Solicitação de reserva inválida.');
+      const existing = await transaction.get(doc(db, 'publicReservations', requestData.code));
+      if (!existing.exists()) throw new Error('Solicitação de reserva inconsistente.');
+      return existing.data() as Reservation;
+    }
+    const reservation = buildReservation({ ...input, idempotencyKey });
+    const reservationData = reservation as unknown as Record<string, unknown>;
+    const publicData = toPublicReservation(reservation) as unknown as Record<string, unknown>;
+    transaction.set(doc(db, 'reservations', reservation.id), reservationData);
+    transaction.set(doc(db, 'publicReservations', reservation.code), publicData);
+    transaction.set(requestRef, { idempotencyKey, reservationId: reservation.id, code: reservation.code, createdAt: reservation.createdAt });
+    return reservation;
+  });
 }
 
 export function updateReservation(id: string, patch: Partial<Reservation>): Reservation | null {
@@ -79,35 +106,38 @@ export function updateReservation(id: string, patch: Partial<Reservation>): Rese
   return nextReservation;
 }
 
-export async function findReservationByCode(code: string): Promise<Reservation | null> {
+export async function findReservationByCode(code: string): Promise<PublicReservation | null> {
   if (!isFirebaseDataMode() || !firebaseDb) return readReservations().find((item) => item.code.toLowerCase() === code.toLowerCase()) || null;
   const snapshot = await getDoc(doc(firebaseDb, 'publicReservations', code.toUpperCase()));
-  return snapshot.exists() ? (snapshot.data() as Reservation) : null;
+  return snapshot.exists() ? (snapshot.data() as PublicReservation) : null;
 }
 
 export async function updateReservationAsync(id: string, patch: Partial<Reservation>): Promise<void> {
-  if (!isFirebaseDataMode() || !firebaseDb) {
+  const db = firebaseDb;
+  if (!isFirebaseDataMode() || !db) {
     updateReservation(id, patch);
     return;
   }
-  const reservationRef = doc(firebaseDb, 'reservations', id);
+  const reservationRef = doc(db, 'reservations', id);
   const current = await getDoc(reservationRef);
   if (!current.exists()) throw new Error('Reserva não encontrada.');
   const next = { ...current.data(), ...patch, updatedAt: new Date().toISOString() } as Reservation;
-  const batch = writeBatch(firebaseDb);
+  const batch = writeBatch(db);
   const firestoreData = next as unknown as Record<string, unknown>;
   batch.update(reservationRef, firestoreData);
-  batch.set(doc(firebaseDb, 'publicReservations', next.code), firestoreData, { merge: true });
+  batch.set(doc(db, 'publicReservations', next.code), toPublicReservation(next) as unknown as Record<string, unknown>);
   await batch.commit();
 }
 
 export async function signInAdmin(email: string, password: string): Promise<AdminSession> {
-  if (!isFirebaseDataMode() || !firebaseAuth || !firebaseDb) throw new Error('Firebase não está habilitado para este ambiente.');
-  const credential = await signInWithEmailAndPassword(firebaseAuth, email, password);
-  const profile = await getDoc(doc(firebaseDb, 'users', credential.user.uid));
+  const auth = firebaseAuth;
+  const db = firebaseDb;
+  if (!isFirebaseDataMode() || !auth || !db) throw new Error('Firebase não está habilitado para este ambiente.');
+  const credential = await signInWithEmailAndPassword(auth, email, password);
+  const profile = await getDoc(doc(db, 'users', credential.user.uid));
   const data = profile.data() as { name?: string; role?: AdminSession['role'] } | undefined;
   if (!profile.exists() || !data?.role) {
-    await signOut(firebaseAuth);
+    await signOut(auth);
     throw new Error('Este usuário ainda não possui uma função cadastrada no Baru.');
   }
   const session: AdminSession = { uid: credential.user.uid, name: data.name || credential.user.displayName || email.split('@')[0], role: data.role, demo: false };
@@ -118,6 +148,37 @@ export async function signInAdmin(email: string, password: string): Promise<Admi
 export async function signOutAdmin(): Promise<void> {
   if (isFirebaseDataMode() && firebaseAuth) await signOut(firebaseAuth);
   writeSession(null);
+}
+
+export function watchAdminSession(listener: (session: AdminSession | null) => void): Unsubscribe {
+  const auth = firebaseAuth;
+  const db = firebaseDb;
+  if (!isFirebaseDataMode() || !auth || !db) {
+    listener(readSession());
+    return () => undefined;
+  }
+  return onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      writeSession(null);
+      listener(null);
+      return;
+    }
+    try {
+      const profile = await getDoc(doc(db, 'users', user.uid));
+      const data = profile.data() as { name?: string; role?: AdminSession['role'] } | undefined;
+      if (!profile.exists() || !data?.role) {
+        await signOut(auth);
+        listener(null);
+        return;
+      }
+      const session: AdminSession = { uid: user.uid, name: data.name || user.displayName || user.email?.split('@')[0] || 'Equipe Baru', role: data.role, demo: false };
+      writeSession(session);
+      listener(session);
+    } catch {
+      writeSession(null);
+      listener(null);
+    }
+  });
 }
 
 export function readSession(): AdminSession | null {

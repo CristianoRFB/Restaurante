@@ -8,7 +8,44 @@ service cloud.firestore {
     function isAdmin() { return role() == 'ADMIN'; }
     function validMoment(data) { return data.name is string && data.description is string && data.imageUrl is string && data.active is bool && data.displayOrder is int; }
     function validMenuItem(data) { return data.name is string && data.description is string && data.categoryId is string && data.priceCents is int && data.priceCents >= 0 && data.imageUrl is string && data.active is bool && data.featured is bool && data.displayOrder is int && data.serviceMomentIds is list; }
-    function validReservation(data) { return data.code is string && data.date is string && data.time is string && data.partySize is int && data.partySize > 0 && data.partySize <= 20 && data.customerName is string && data.whatsapp is string && data.note is string && data.status in ['NEW', 'CONFIRMED', 'ARRIVED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']; }
+    function validReservation(data) {
+      return data.keys().hasOnly(['id', 'code', 'date', 'time', 'partySize', 'customerId', 'customerName', 'whatsapp', 'note', 'status', 'tableId', 'momentId', 'source', 'history', 'createdAt', 'updatedAt', 'idempotencyKey'])
+        && data.id is string && data.id.size() >= 8 && data.id.size() <= 100
+        && data.code is string && data.code.size() >= 10 && data.code.size() <= 40
+        && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.time is string && data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && data.partySize is int && data.partySize > 0 && data.partySize <= 20
+        && data.customerId is string && data.customerId.size() >= 1 && data.customerId.size() <= 100
+        && data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100
+        && data.whatsapp is string && data.whatsapp.matches('^[0-9]{10,15}$')
+        && data.note is string && data.note.size() <= 500
+        && data.status in ['NEW', 'CONFIRMED', 'ARRIVED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']
+        && data.source in ['SITE', 'WHATSAPP', 'ADMIN']
+        && data.history is list && data.history.size() <= 50
+        && data.createdAt is string && data.updatedAt is string
+        && (!data.keys().hasAny(['tableId']) || data.tableId is string)
+        && (!data.keys().hasAny(['momentId']) || data.momentId is string)
+        && (!data.keys().hasAny(['idempotencyKey']) || (data.idempotencyKey is string && data.idempotencyKey.size() >= 16 && data.idempotencyKey.size() <= 100));
+    }
+    function validReservationRequest(data) {
+      return data.keys().hasOnly(['idempotencyKey', 'reservationId', 'code', 'createdAt'])
+        && data.idempotencyKey is string && data.idempotencyKey.size() >= 16 && data.idempotencyKey.size() <= 100
+        && data.reservationId is string && data.reservationId.size() >= 8 && data.reservationId.size() <= 100
+        && data.code is string && data.code.size() >= 10 && data.code.size() <= 40
+        && data.createdAt is string;
+    }
+    function validPublicReservation(data) {
+      return data.keys().hasOnly(['id', 'code', 'date', 'time', 'partySize', 'customerName', 'whatsapp', 'status', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() >= 8 && data.id.size() <= 100
+        && data.code is string && data.code.size() >= 10 && data.code.size() <= 40
+        && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.time is string && data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && data.partySize is int && data.partySize > 0 && data.partySize <= 20
+        && data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100
+        && data.whatsapp is string && data.whatsapp.matches('^[0-9]{10,15}$')
+        && data.status in ['NEW', 'CONFIRMED', 'ARRIVED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']
+        && data.createdAt is string && data.updatedAt is string;
+    }
 
     match /restaurantSettings/{id} { allow read: if true; allow write: if isAdmin(); }
     match /serviceMoments/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update, delete: if isAdmin() && validMoment(request.resource.data); }
@@ -26,9 +63,15 @@ service cloud.firestore {
     match /publicReservations/{code} {
       allow get: if resource.data.code == code;
       allow list: if false;
-      allow create: if !signedIn() && validReservation(request.resource.data);
-      allow update: if isStaff() && request.resource.data.code == resource.data.code && validReservation(request.resource.data);
+      allow create: if !signedIn() && validPublicReservation(request.resource.data);
+      allow update: if isStaff() && request.resource.data.code == resource.data.code && validPublicReservation(request.resource.data);
       allow delete: if isManager();
+    }
+    match /reservationRequests/{key} {
+      allow get: if !signedIn();
+      allow list: if false;
+      allow create: if (isStaff() || !signedIn()) && validReservationRequest(request.resource.data);
+      allow update, delete: if false;
     }
     match /conversations/{id} { allow read, create, update: if isStaff(); allow delete: if isManager(); }
     match /siteContent/{id} { allow read: if true; allow write: if isManager(); }
