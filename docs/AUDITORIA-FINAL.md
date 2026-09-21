@@ -22,7 +22,7 @@ O fluxo Baru foi implementado e publicado. As rotas públicas são `/`, `/cardap
 | Firebase | 8 | Projeto `restaurante-5665d`, Rules e índices estão publicados; SDK modular, Auth por e-mail/senha, sessão revalidada e repository de reservas estão disponíveis por modo de ambiente. |
 | Integridade de dados | 8 | Validação estrita, cópia operacional protegida e idempotência transacional cobrem reenvio/refresh; overbooking concorrente ainda precisa de controle server-side. |
 | Performance | 7 | Build verde e assets públicos antigos deixaram de ser empacotados; imagens externas, chunks acima de 500 kB e ausência de profiling/Lighthouse mantêm risco. |
-| Dependências | 7 | `npm audit` identificou 7 vulnerabilidades moderadas no conjunto herdado; não há correção automática aplicada sem validar impacto no stack. |
+| Dependências | 7 | `npm audit` identificou 7 vulnerabilidades moderadas somente na cadeia de ferramentas de desenvolvimento `firebase-tools`; dependências de produção estão sem vulnerabilidades reportadas. |
 | Qualidade de código | 8 | Domínio, dados, UI e módulos foram separados; alguns componentes de tela ainda são grandes e pedem extração incremental. |
 | Cobertura/qualidade de testes | 7 | 7 testes de domínio + 5 de Rules passam; ainda faltam testes de componentes, e2e e fuzzing de concorrência. |
 | Tratamento de erros | 7 | Formulários e estados vazios/erro estão tratados; timeout/offline de Firebase real ainda não está conectado. |
@@ -40,21 +40,21 @@ As correções possíveis dentro do escopo foram feitas antes da nova rodada de 
 - `git remote -v` — fetch/push apontam para `https://github.com/CristianoRFB/Restaurante.git`.
 - `npm run lint` — passou.
 - `npm run typecheck` — passou.
-- `npm test` — 2 arquivos, 6 testes passaram.
+- `npm test` — 2 arquivos, 7 testes passaram.
 - `npm run test:rules` — 1 arquivo, 5 testes passaram no emulador.
 - `npm run build` — passou; 20 rotas Baru foram geradas.
 - `npm run ci` — passou novamente com lint, typecheck, testes e build.
 - `npm audit --omit=dev --json` — nenhuma vulnerabilidade em dependências de produção; o audit completo reporta 7 moderadas apenas na cadeia de `firebase-tools` de desenvolvimento.
-- Smoke local e remoto — `/`, `/cardapio`, `/reservar`, `/admin/login` e `/admin` responderam HTTP 200.
+- Smoke local e remoto — `/`, `/cardapio`, `/reservar`, `/admin/login`, `/admin` e `/admin/relatorios` responderam HTTP 200 sem legado visível.
 - `npx firebase deploy --only firestore:indexes --force --project restaurante-5665d` — índices Baru publicados e índices legados removidos.
 - `npx firebase deploy --only firestore:rules --project restaurante-5665d` — Rules atualizadas com confirmação pública opaca.
-- `npx wrangler deploy --config wrangler.jsonc` — Worker republicado após o adapter Firebase.
+- `npx wrangler deploy --config wrangler.jsonc` — Worker republicado após o adapter Firebase; versão final verificada `050e7ab7-3577-4022-a44c-6e90c24997a5`.
 
 ## Estado externo
 
 - Firebase: `restaurante-5665d` ativo; Firestore criado/configurado; Rules e índices publicados; adapter modular versionado para Auth e reservas.
 - Cloudflare: Worker `baru-gastronomia` publicado na URL padrão fornecida pela conta; domínio próprio ainda pendente.
-- Git: remote oficial correto; o estado auditado está pronto para o primeiro commit da conversão.
+- Git: remote oficial correto; `main` limpo e sincronizado com `origin/main` no commit `6e49b26`.
 
 ## Riscos e bloqueios restantes
 
