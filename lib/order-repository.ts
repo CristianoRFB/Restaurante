@@ -2,10 +2,28 @@ import { collection, doc, getDoc, getDocs, onSnapshot, query, runTransaction, se
 import { firebaseAuth, firebaseDb, isFirebaseDataMode } from '@/lib/firebase-client';
 import { categories as demoCategories, menuItems as demoItems } from '@/lib/baru-data';
 import type { MenuCategory, MenuItem } from '@/shared/baru-domain';
-import { getOrderStatusMessage, ORDER_TRANSITIONS, type CartItemDraft, type OrderCatalog, type OrderModifier, type OrderModifierGroup, type OrderNotification, type OrderOperationsSettings, type OrderRecord, type OrderStatus, type PublicOrder } from '@/shared/order-domain';
+import { getOrderStatusMessage, ORDER_TRANSITIONS, sanitizeTableId, type CartItemDraft, type OrderCatalog, type OrderModifier, type OrderModifierGroup, type OrderNotification, type OrderOperationsSettings, type OrderRecord, type OrderStatus, type PublicOrder } from '@/shared/order-domain';
 
 const CART_KEY = 'baru-order-cart-v1';
+const TABLE_SESSION_KEY = 'baru-table-session-v1';
 export const defaultOrderSettings: OrderOperationsSettings = { acceptingOrders: true, pauseMessage: 'Os pedidos estão pausados no momento.', fulfillmentModes: ['PICKUP'], paymentMethods: ['PIX', 'CARD_ON_DELIVERY', 'CASH'], deliveryFeeCents: 0, minimumOrderCents: 0, orderEstimateMinutes: 30, deliveryZones: [] };
+
+export function readTableSession(): string {
+  if (typeof window === 'undefined') return '';
+  try { return sanitizeTableId(window.sessionStorage.getItem(TABLE_SESSION_KEY)) || ''; } catch { return ''; }
+}
+
+export function writeTableSession(value: string): void {
+  if (typeof window === 'undefined') return;
+  const tableId = sanitizeTableId(value);
+  if (!tableId) return;
+  try { window.sessionStorage.setItem(TABLE_SESSION_KEY, tableId); } catch { /* armazenamento opcional */ }
+}
+
+export function clearTableSession(): void {
+  if (typeof window === 'undefined') return;
+  try { window.sessionStorage.removeItem(TABLE_SESSION_KEY); } catch { /* armazenamento opcional */ }
+}
 
 function randomId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;

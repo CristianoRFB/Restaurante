@@ -14,11 +14,11 @@ O catálogo real publicado no Firebase foi cadastrado a partir do cardápio ofic
 
 O endpoint `POST /api/orders` recalcula o preço no servidor a partir do catálogo Firebase, valida adicionais, aplica pedido mínimo/taxa/configurações, protege contra duplicidade por `clientRequestId`, grava pedido privado + projeção pública e usa limite antiabuso por IP hashado em Cloudflare KV. O cliente acompanha em `/pedido/[codigo]`; clientes autenticados também veem `/conta/pedidos` e podem pedir novamente. A equipe opera os estados em `/admin/pedidos`.
 
-`restaurantSettings/main` também está publicado com o endereço, WhatsApp e horários operacionais reais/confirmados para o ambiente atual. A solicitação pública de reserva passa por `POST /api/reservations`, no Worker, com validação, rate limit persistente por IP hashado em Cloudflare KV, idempotência e locks transacionais. O painel `/admin/mesas` agora cadastra áreas e mesas diretamente no Firebase com validação de capacidade e Rules; como ainda não há estrutura operacional confirmada cadastrada, o endpoint recusa novas reservas com mensagem explícita. Nenhum layout fictício foi usado para simular disponibilidade.
+`restaurantSettings/main` também está publicado com o endereço, WhatsApp e horários operacionais reais/confirmados para o ambiente atual. A solicitação pública de reserva passa por `POST /api/reservations`, no Worker, com validação, rate limit persistente por IP hashado em Cloudflare KV, idempotência e locks transacionais. O painel `/admin/mesas` cadastra áreas e mesas diretamente no Firebase com validação de capacidade e Rules; cada mesa agora gera QR Code e link público em `/mesa/[id]`, que mantém a identificação até o checkout de consumo no local. O backend continua validando a existência e o estado operacional da mesa antes de criar o pedido. Nenhum layout fictício foi usado para simular disponibilidade.
 
 O endereço padrão do Worker ainda pertence ao namespace Cloudflare disponível nesta conta. O domínio próprio do Baru continua sendo uma configuração externa pendente.
 
-Estado auditado nesta rodada: **90% de maturidade**, com produção controlada. O núcleo de pedidos internos, catálogo CRUD, adicionais, caixa, finanças, promoções, disponibilidade por horário, notificações de novos pedidos e configuração de zonas já está implementado em Firebase/Worker. QR de mesa, App Check, dados operacionais finais e QA concorrente ainda precisam ser fechados antes de declarar prontidão irrestrita.
+Estado auditado nesta rodada: **92% de maturidade**, com produção controlada. O núcleo de pedidos internos, catálogo CRUD, adicionais, caixa, finanças, promoções, disponibilidade por horário, notificações de novos pedidos e acesso por QR de mesa já está implementado em Firebase/Worker. App Check, dados operacionais finais e QA concorrente ainda precisam ser fechados antes de declarar prontidão irrestrita.
 
 ## Prints de referência e telas
 
@@ -39,7 +39,7 @@ A área pública de cliente está em `/conta`. O cliente pode criar sua própria
 
 ## Rotas
 
-Públicas: `/`, `/cardapio`, `/produto/[id]`, `/carrinho`, `/checkout`, `/conta`, `/conta/pedidos`, `/pedido/[codigo]`, `/reservar`, `/reserva/[codigo]`, `POST /api/reservations`, `POST /api/orders`.
+Públicas: `/`, `/cardapio`, `/mesa/[id]`, `/produto/[id]`, `/carrinho`, `/checkout`, `/conta`, `/conta/pedidos`, `/pedido/[codigo]`, `/reservar`, `/reserva/[codigo]`, `POST /api/reservations`, `POST /api/orders`.
 
 Admin: `/admin/login`, `/admin`, `/admin/reservas`, `/admin/reservas/nova`, `/admin/reservas/[id]/editar`, `/admin/pedidos`, `/admin/pedidos/[id]`, `/admin/agenda`, `/admin/clientes`, `/admin/clientes/[id]`, `/admin/cardapio`, `/admin/catalogo`, `/admin/adicionais`, `/admin/mesas`, `/admin/equipe`, `/admin/relatorios`, `/admin/caixa`, `/admin/financas`, `/admin/promocoes`, `/admin/conteudo`, `/admin/configuracoes`, `/admin/configuracoes/pedidos`, `/admin/setup`.
 

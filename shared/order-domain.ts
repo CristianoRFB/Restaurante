@@ -4,6 +4,12 @@ export type OrderStatus = 'NEW' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'OUT_FOR
 export type FulfillmentMode = 'PICKUP' | 'DELIVERY' | 'DINE_IN';
 export type PaymentMethod = 'PIX' | 'CARD_ON_DELIVERY' | 'CASH';
 
+export function sanitizeTableId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  return /^(?:table|mesa)-[a-z0-9-]{2,120}$/i.test(normalized) ? normalized : null;
+}
+
 export type PromotionDiscountType = 'PERCENT' | 'FIXED';
 
 export interface Promotion {
