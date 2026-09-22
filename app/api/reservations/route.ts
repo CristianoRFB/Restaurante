@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { generateTimeSlots, normalizeWhatsapp, validateReservation, type RestaurantSettings, type RestaurantTable } from '@/shared/baru-domain';
+import { z } from 'zod';
 
 const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
 const database = `projects/${projectId}/databases/(default)`;
@@ -8,6 +9,17 @@ const requestWindowMs = 60_000;
 const requestLimit = 8;
 const fallbackRecentRequests = new Map<string, { count: number; resetAt: number }>();
 let accessTokenCache: { value: string; expiresAt: number } | null = null;
+
+const reservationPayloadSchema = z.object({
+  date: z.string().min(1).max(10),
+  time: z.string().min(1).max(5),
+  partySize: z.number().int().min(1).max(20),
+  customerName: z.string().trim().min(2).max(100),
+  whatsapp: z.string().min(10).max(32),
+  note: z.string().max(500).optional().default(''),
+  idempotencyKey: z.string().min(16).max(100).optional(),
+}).strict();
+type ReservationPayload = z.infer<typeof reservationPayloadSchema>;
 
 type FirestoreValue = { stringValue?: string; integerValue?: string; booleanValue?: boolean; mapValue?: { fields?: Record<string, FirestoreValue> }; arrayValue?: { values?: FirestoreValue[] }; nullValue?: string };
 
@@ -39,7 +51,7 @@ async function googleAccessToken(): Promise<string> {
   const key = await crypto.subtle.importKey('pkcs8', pemToDer(account.private_key), algorithm, false, ['sign']);
   const signature = await crypto.subtle.sign(algorithm, key, new TextEncoder().encode(`${header}.${claim}`));
   const assertion = `${header}.${claim}.${base64Url(signature)}`;
-  const response = await fetch(account.token_uri || 'https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }) });
+  const response = await fetch(account.token_uri || 'https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }), signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`Não foi possível autenticar o Worker no Firebase: ${await response.text()}`);
   const data = await response.json() as { access_token: string; expires_in: number };
   accessTokenCache = { value: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 };
@@ -50,7 +62,7 @@ async function firestoreRequest(path: string, init: RequestInit = {}): Promise<R
   const headers = new Headers(init.headers);
   headers.set('authorization', `Bearer ${await googleAccessToken()}`);
   headers.set('content-type', 'application/json');
-  return fetch(`${firestoreDocuments}${path}`, { ...init, headers });
+  return fetch(`${firestoreDocuments}${path}`, { ...init, headers, signal: AbortSignal.timeout(10_000) });
 }
 
 function fromFirestoreValue(value: FirestoreValue): unknown {
@@ -96,20 +108,20 @@ function resource(collectionName: string, id: string): string {
   return `${database}/documents/${collectionName}/${encodeURIComponent(id)}`;
 }
 
-async function createReservation(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function createReservation(body: ReservationPayload): Promise<Record<string, unknown>> {
   const settingsResponse = await firestoreRequest('/restaurantSettings/main');
   if (!settingsResponse.ok) throw new Error('Configurações de reserva não publicadas.');
   const settings = fromFirestoreDocument(await settingsResponse.json()) as unknown as RestaurantSettings;
-  const tables = (await listDocuments<RestaurantTable>('tables')).filter((table) => table.active && table.state === 'AVAILABLE' && table.capacity >= Number(body.partySize));
+  const validationErrors = validateReservation({ date: body.date, time: body.time, partySize: body.partySize, customerName: body.customerName, whatsapp: body.whatsapp, note: body.note }, settings);
+  if (validationErrors.length) throw new Error(validationErrors[0]);
+  if (!generateTimeSlots(settings, body.date).includes(body.time)) throw new Error('Escolha um horário dentro do funcionamento do restaurante.');
+  const tables = (await listDocuments<RestaurantTable>('tables')).filter((table) => table.active && table.state === 'AVAILABLE' && table.capacity >= body.partySize);
   if (!tables.length) throw new Error('Reservas online aguardam o cadastro das mesas disponíveis pela equipe.');
 
-  const reservationIdempotency = typeof body.idempotencyKey === 'string' && body.idempotencyKey.length >= 16 ? body.idempotencyKey : crypto.randomUUID();
-  const validationErrors = validateReservation({ date: String(body.date || ''), time: String(body.time || ''), partySize: Number(body.partySize), customerName: String(body.customerName || ''), whatsapp: String(body.whatsapp || ''), note: String(body.note || '') }, settings);
-  if (validationErrors.length) throw new Error(validationErrors[0]);
-  if (!generateTimeSlots(settings, String(body.date)).includes(String(body.time))) throw new Error('Escolha um horário dentro do funcionamento do restaurante.');
-  const whatsapp = normalizeWhatsapp(String(body.whatsapp));
+  const reservationIdempotency = body.idempotencyKey || crypto.randomUUID();
+  const whatsapp = normalizeWhatsapp(body.whatsapp);
   const duration = settings.reservationDurationMinutes;
-  const lockResources = tables.flatMap((table) => lockIds(String(body.date), String(body.time), table.id, duration).map((id) => ({ tableId: table.id, id, name: resource('reservationLocks', id) })));
+  const lockResources = tables.flatMap((table) => lockIds(body.date, body.time, table.id, duration).map((id) => ({ tableId: table.id, id, name: resource('reservationLocks', id) })));
   const requestName = resource('reservationRequests', reservationIdempotency);
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -127,12 +139,12 @@ async function createReservation(body: Record<string, unknown>): Promise<Record<
       return fromFirestoreDocument(await publicResponse.json());
     }
     const foundLocks = new Set(batch.flatMap((entry) => entry.found?.name ? [entry.found.name] : []));
-    const availableTable = tables.find((table) => lockIds(String(body.date), String(body.time), table.id, duration).every((id) => !foundLocks.has(resource('reservationLocks', id))));
+    const availableTable = tables.find((table) => lockIds(body.date, body.time, table.id, duration).every((id) => !foundLocks.has(resource('reservationLocks', id))));
     if (!availableTable) throw new Error('Não há mesa disponível para esse horário.');
     const now = new Date().toISOString();
     const id = `res-${crypto.randomUUID()}`;
     const code = `BRU-${crypto.randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase()}`;
-    const reservation = { id, code, date: String(body.date), time: String(body.time), partySize: Number(body.partySize), customerId: 'guest', customerName: String(body.customerName).trim(), whatsapp, note: String(body.note || '').trim(), status: 'NEW', tableId: availableTable.id, source: 'SITE', history: [{ id: crypto.randomUUID(), status: 'NEW', label: 'Reserva criada', createdAt: now, by: 'Site' }], createdAt: now, updatedAt: now, idempotencyKey: reservationIdempotency };
+    const reservation = { id, code, date: body.date, time: body.time, partySize: body.partySize, customerId: 'guest', customerName: body.customerName, whatsapp, note: body.note, status: 'NEW', tableId: availableTable.id, source: 'SITE', history: [{ id: crypto.randomUUID(), status: 'NEW', label: 'Reserva criada', createdAt: now, by: 'Site' }], createdAt: now, updatedAt: now, idempotencyKey: reservationIdempotency };
     const publicReservation = { id, code, date: reservation.date, time: reservation.time, partySize: reservation.partySize, customerName: reservation.customerName, whatsappLast4: whatsapp.slice(-4), status: 'NEW', createdAt: now, updatedAt: now };
     const writes = [
       { update: { name: resource('reservations', id), fields: toFields(reservation) } },
@@ -186,11 +198,16 @@ async function allowRequest(request: Request): Promise<boolean> {
 
 export async function POST(request: Request): Promise<Response> {
   if (!(await allowRequest(request))) return Response.json({ error: 'Muitas tentativas. Aguarde um minuto.' }, { status: 429, headers: { 'cache-control': 'no-store' } });
+  const contentLength = Number(request.headers.get('content-length') || 0);
+  if (contentLength > 32_768) return Response.json({ error: 'Payload de reserva excede o limite permitido.' }, { status: 413, headers: { 'cache-control': 'no-store' } });
   try {
-    const body = await request.json() as Record<string, unknown>;
-    const allowedKeys = new Set(['date', 'time', 'partySize', 'customerName', 'whatsapp', 'note', 'idempotencyKey']);
-    if (Object.keys(body).some((key) => !allowedKeys.has(key))) return Response.json({ error: 'Payload de reserva inválido.' }, { status: 400 });
-    const result = await createReservation(body);
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 32_768) return Response.json({ error: 'Payload de reserva excede o limite permitido.' }, { status: 413, headers: { 'cache-control': 'no-store' } });
+    let decodedBody: unknown;
+    try { decodedBody = JSON.parse(rawBody); } catch { return Response.json({ error: 'JSON de reserva inválido.' }, { status: 400 }); }
+    const parsedBody = reservationPayloadSchema.safeParse(decodedBody);
+    if (!parsedBody.success) return Response.json({ error: 'Payload de reserva inválido.' }, { status: 400 });
+    const result = await createReservation(parsedBody.data);
     return Response.json(result, { status: 201, headers: { 'cache-control': 'no-store' } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Não foi possível processar a reserva.';

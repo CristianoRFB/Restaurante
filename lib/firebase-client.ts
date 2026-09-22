@@ -18,7 +18,8 @@ export const firebaseProjectId = firebaseConfig.projectId;
 export const firebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 export const firebaseDataMode = process.env.NEXT_PUBLIC_DATA_MODE === 'firebase';
 export const firebaseSdkConfigAvailable = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && process.env.NEXT_PUBLIC_FIREBASE_APP_ID);
-export const productionEnvironmentReady = firebaseDataMode && firebaseSdkConfigAvailable && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS !== 'true' && process.env.NEXT_PUBLIC_USE_DEVELOPMENT_SEED !== 'true';
+export const appCheckConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY);
+export const productionEnvironmentReady = firebaseDataMode && firebaseSdkConfigAvailable && appCheckConfigured && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS !== 'true' && process.env.NEXT_PUBLIC_USE_DEVELOPMENT_SEED !== 'true';
 const emulatorHost = process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST || '127.0.0.1';
 const emulatorPort = Number(process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_PORT || 8180);
 

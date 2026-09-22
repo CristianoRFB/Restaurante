@@ -55,6 +55,17 @@ describe('Firestore rules do Baru', () => {
     await assertFails(setDoc(doc(manager, 'tables/table-id-divergente'), { ...table, id: 'outro-id' }));
   });
 
+  it('alinha autorização e identidade dos documentos operacionais', async () => {
+    const service = env.authenticatedContext('service').firestore();
+    const cashier = env.authenticatedContext('cashier').firestore();
+    const admin = env.authenticatedContext('admin').firestore();
+    await assertFails(setDoc(doc(service, 'restaurantSettings/main'), { demoMode: false }));
+    await assertFails(setDoc(doc(cashier, 'areas/area-caixa-1234'), { id: 'area-caixa-1234', name: 'Caixa', active: true, displayOrder: 0 }));
+    await assertFails(setDoc(doc(admin, 'reservations/res-test-1234'), { ...reservation, id: 'res-outro-id' }));
+    await assertFails(setDoc(doc(admin, 'publicReservations/BRU-OUTRO-1234'), { id: 'res-public-1234', code: 'BRU-TEST-1234', date: reservation.date, time: reservation.time, partySize: 2, customerName: reservation.customerName, whatsappLast4: '7766', status: 'NEW', createdAt: reservation.createdAt, updatedAt: reservation.updatedAt }));
+    await assertFails(setDoc(doc(admin, 'reservationRequests/request-path-1234'), { idempotencyKey: 'different-request-1234', reservationId: reservation.id, code: reservation.code, createdAt: reservation.createdAt }));
+  });
+
   it('permitem equipe ler e atualizar, mas bloqueiam exclusão para atendimento', async () => {
     const service = env.authenticatedContext('service').firestore();
     await assertSucceeds(getDoc(doc(service, 'reservations/res-test-1234')));

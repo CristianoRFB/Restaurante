@@ -2,7 +2,7 @@ import { areas as demoAreas, categories as demoCategories, content as demoConten
 import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, where } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type Unsubscribe } from 'firebase/auth';
 import { firebaseAuth, firebaseDb, isFirebaseDataMode } from '@/lib/firebase-client';
-import type { Area, Customer, MenuCategory, MenuItem, PublicReservation, Reservation, RestaurantSettings, RestaurantTable, ServiceMoment, SiteContent, TeamMember } from '@/shared/baru-domain';
+import { validateReservation, type Area, type Customer, type MenuCategory, type MenuItem, type PublicReservation, type Reservation, type RestaurantSettings, type RestaurantTable, type ServiceMoment, type SiteContent, type TeamMember } from '@/shared/baru-domain';
 
 const RESERVATIONS_KEY = 'baru-reservations-v1';
 const SESSION_KEY = 'baru-admin-session-v1';
@@ -49,10 +49,20 @@ function configuredReservationDuration(data?: Record<string, unknown>): number {
   return duration;
 }
 
-function hasLocalTableConflict(reservation: Pick<Reservation, 'date' | 'time' | 'tableId' | 'status'>, current: Reservation[]): boolean {
+function hasLocalTableConflict(reservation: Pick<Reservation, 'id' | 'date' | 'time' | 'tableId' | 'status'>, current: Reservation[]): boolean {
   if (!reservationOccupiesTable(reservation)) return false;
   const nextLocks = new Set(reservationLockIds(reservation));
-  return current.some((item) => reservationOccupiesTable(item) && item.id !== (reservation as Reservation).id && reservationLockIds(item).some((lock) => nextLocks.has(lock)));
+  return current.some((item) => reservationOccupiesTable(item) && item.id !== reservation.id && reservationLockIds(item).some((lock) => nextLocks.has(lock)));
+}
+
+function validateOperationalTable(table: RestaurantTable | undefined, reservation: Pick<Reservation, 'tableId' | 'partySize'>): void {
+  if (!reservation.tableId) return;
+  if (!table || !table.active || table.state === 'MAINTENANCE') throw new Error('A mesa selecionada não está disponível para operação.');
+  if (table.capacity < reservation.partySize) throw new Error('A mesa selecionada não comporta o número de pessoas.');
+}
+
+function reservationValidationInput(reservation: Pick<Reservation, 'date' | 'time' | 'partySize' | 'customerName' | 'whatsapp' | 'note'>) {
+  return { date: reservation.date, time: reservation.time, partySize: reservation.partySize, customerName: reservation.customerName, whatsapp: reservation.whatsapp, note: reservation.note };
 }
 
 function toPublicReservation(reservation: Reservation): PublicReservation {
@@ -198,7 +208,13 @@ export async function createReservationAsync(input: ReservationInput): Promise<R
     }
     const reservation = buildReservation({ ...input, idempotencyKey });
     const settingsSnapshot = await transaction.get(doc(db, 'restaurantSettings', 'main'));
-    const durationMinutes = configuredReservationDuration(settingsSnapshot.exists() ? settingsSnapshot.data() : undefined);
+    if (!settingsSnapshot.exists()) throw new Error('Configurações de reserva não publicadas.');
+    const settings = settingsSnapshot.data() as RestaurantSettings;
+    const validationErrors = validateReservation(reservationValidationInput(reservation), settings);
+    if (validationErrors.length) throw new Error(validationErrors[0]);
+    const tableSnapshot = reservation.tableId ? await transaction.get(doc(db, 'tables', reservation.tableId)) : undefined;
+    validateOperationalTable(tableSnapshot?.exists() ? tableSnapshot.data() as RestaurantTable : undefined, reservation);
+    const durationMinutes = configuredReservationDuration(settingsSnapshot.data());
     const lockIds = reservationOccupiesTable(reservation) ? reservationLockIds(reservation, durationMinutes) : [];
     const locks = await Promise.all(lockIds.map((lockId) => transaction.get(doc(db, 'reservationLocks', lockId))));
     if (locks.some((lock) => lock.exists())) throw new Error('A mesa selecionada já está ocupada neste horário.');
@@ -243,8 +259,15 @@ export async function updateReservationAsync(id: string, patch: Partial<Reservat
     if (!currentSnapshot.exists()) throw new Error('Reserva não encontrada.');
     const current = currentSnapshot.data() as Reservation;
     const next = { ...current, ...patch, updatedAt: new Date().toISOString() } as Reservation;
+    if (Object.prototype.hasOwnProperty.call(patch, 'tableId') && !patch.tableId) delete next.tableId;
     const settingsSnapshot = await transaction.get(doc(db, 'restaurantSettings', 'main'));
-    const durationMinutes = configuredReservationDuration(settingsSnapshot.exists() ? settingsSnapshot.data() : undefined);
+    if (!settingsSnapshot.exists()) throw new Error('Configurações de reserva não publicadas.');
+    const settings = settingsSnapshot.data() as RestaurantSettings;
+    const validationErrors = validateReservation(reservationValidationInput(next), settings);
+    if (validationErrors.length) throw new Error(validationErrors[0]);
+    const tableSnapshot = next.tableId ? await transaction.get(doc(db, 'tables', next.tableId)) : undefined;
+    validateOperationalTable(tableSnapshot?.exists() ? tableSnapshot.data() as RestaurantTable : undefined, next);
+    const durationMinutes = configuredReservationDuration(settingsSnapshot.data());
     const oldLockIds = reservationOccupiesTable(current) ? reservationLockIds(current, durationMinutes) : [];
     const nextLockIds = reservationOccupiesTable(next) ? reservationLockIds(next, durationMinutes) : [];
     const locksToRead = Array.from(new Set(nextLockIds));

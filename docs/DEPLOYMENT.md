@@ -14,8 +14,8 @@
 3. Rode npm run lint, npm run typecheck, npm test, npm run test:rules, npm run test:e2e, npm run audit e npm run build.
 4. Verifique wrangler.jsonc: Worker baru-gastronomia, assets, observabilidade e o binding KV `RESERVATION_RATE_LIMIT` habilitados.
 5. Publique com `npm run deploy:vinext` (o Vite usa explicitamente `@cloudflare/vite-plugin`).
-6. Smoke test em /, /cardapio, /conta, /reservar, /admin/login, /admin sem sessão, `POST /api/reservations` e /admin/atendimento inexistente.
+6. Smoke test em /, /cardapio, /conta, /reservar, /admin/login, /admin sem sessão, `POST /api/reservations` e a rota administrativa removida.
 
 URL publicada atual: https://baru-gastronomia.acai-mais-sabor.workers.dev/
 
-O namespace/domínio próprio ainda é uma pendência externa desta conta Cloudflare. Não há integração própria de checkout nem inbox de WhatsApp.
+O namespace/domínio próprio ainda é uma pendência externa desta conta Cloudflare. App Check e alertas também precisam ser configurados antes de produção irrestrita. Não há integração própria de checkout nem inbox de WhatsApp.

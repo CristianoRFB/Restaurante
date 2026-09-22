@@ -90,21 +90,21 @@ service cloud.firestore {
     match /customers/{id} { allow read: if isStaff(); allow create, update: if isStaff(); allow delete: if isManager(); }
     match /reservations/{id} {
       allow read: if isStaff();
-      allow create: if isStaff() && validReservation(request.resource.data);
-      allow update: if isStaff() && validReservation(request.resource.data);
+      allow create: if isStaff() && validReservation(request.resource.data) && request.resource.data.id == id;
+      allow update: if isStaff() && validReservation(request.resource.data) && request.resource.data.id == id;
       allow delete: if isManager();
     }
     match /publicReservations/{code} {
       allow get: if resource.data.code == code;
       allow list: if false;
-      allow create: if isStaff() && validPublicReservation(request.resource.data);
+      allow create: if isStaff() && validPublicReservation(request.resource.data) && request.resource.data.code == code;
       allow update: if isStaff() && request.resource.data.code == resource.data.code && validPublicReservation(request.resource.data);
       allow delete: if isManager();
     }
     match /reservationRequests/{key} {
       allow get: if false;
       allow list: if false;
-      allow create: if isStaff() && validReservationRequest(request.resource.data);
+      allow create: if isStaff() && validReservationRequest(request.resource.data) && request.resource.data.idempotencyKey == key;
       allow update, delete: if false;
     }
     match /reservationLocks/{lockId} {

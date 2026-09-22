@@ -24,6 +24,8 @@ O visitante envia somente os dados mínimos para `POST /api/reservations`. O Wor
 
 O endpoint expõe apenas a projeção mínima na confirmação e guarda somente os quatro últimos dígitos do WhatsApp no documento público. A operação responde explicitamente que as reservas aguardam o cadastro das mesas quando não existe capacidade operacional confirmada; não há seed de mesas em produção.
 
+O cadastro de `areas` e `tables` pelo painel administrativo grava somente documentos com schema validado: ID do documento igual ao campo `id`, capacidade de 1 a 20, estado conhecido e mesa ativa fora de manutenção. Criação/edição de reserva valida novamente a mesa dentro da transação.
+
 ## Comandos
 
     npm run test:rules

@@ -221,7 +221,7 @@ export function generateTimeSlots(settings: RestaurantSettings, date: string, in
   }).filter(({ minutes }) => minutes < close).map(({ time }) => time);
 }
 
-function dateKeyInTimeZone(date = new Date(), timeZone = 'America/Sao_Paulo'): string {
+export function dateKeyInTimeZone(date = new Date(), timeZone = 'America/Sao_Paulo'): string {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
@@ -232,8 +232,9 @@ export function validateReservation(input: Pick<Reservation, 'date' | 'time' | '
   const dateParts = input.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const timeIsValid = /^([01]\d|2[0-3]):[0-5]\d$/.test(input.time);
   const date = dateParts ? new Date(Number(dateParts[1]), Number(dateParts[2]) - 1, Number(dateParts[3])) : new Date(Number.NaN);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayKey = dateKeyInTimeZone(new Date(), settings.timezone);
+  const [todayYear, todayMonth, todayDay] = todayKey.split('-').map(Number);
+  const today = new Date(todayYear, todayMonth - 1, todayDay);
   if (!dateParts || Number.isNaN(date.getTime()) || date.getFullYear() !== Number(dateParts[1]) || date.getMonth() !== Number(dateParts[2]) - 1 || date.getDate() !== Number(dateParts[3])) errors.push('Escolha uma data válida.');
   else if (date < today) errors.push('A data da reserva não pode estar no passado.');
   if (!timeIsValid) errors.push('Escolha um horário válido.');

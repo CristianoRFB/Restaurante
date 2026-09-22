@@ -18,6 +18,13 @@ test('rotas públicas essenciais permanecem navegáveis', async ({ page }) => {
 
   await page.goto('/admin/login');
   await expect(page.getByRole('heading', { name: 'Acesso da equipe', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Acessar modo demo/i })).toHaveCount(0);
+});
+
+test('admin sem sessão bloqueia a operação e oferece o login', async ({ page }) => {
+  await page.goto('/admin');
+  await expect(page.getByRole('heading', { name: 'Acesso da equipe', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ir para o login', exact: true })).toBeVisible();
 });
 
 test('menu móvel abre e fecha sem navegação cenográfica', async ({ page }) => {

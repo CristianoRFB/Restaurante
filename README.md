@@ -15,6 +15,8 @@ O catálogo real publicado no Firebase foi cadastrado a partir do cardápio ofic
 
 O endereço padrão do Worker ainda pertence ao namespace Cloudflare disponível nesta conta. O domínio próprio do Baru continua sendo uma configuração externa pendente.
 
+Estado auditado nesta rodada: **79% de maturidade**, com produção controlada. App Check, domínio próprio, alertas e o cadastro das mesas/áreas reais ainda são necessários para operação irrestrita.
+
 ## Prints de referência e telas
 
 As imagens abaixo são as referências visuais oficiais usadas para implementar as telas reais. Elas ficam versionadas em `docs/referencias-visuais/` e não são usadas como background para fingir funcionamento.
@@ -57,6 +59,7 @@ npm run test:rules
 npm run test:e2e
 npm run test:e2e:auth # com E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD
 npm run audit
+npm audit --omit=dev # 0 vulnerabilidades de produção
 npm run build
 ```
 
