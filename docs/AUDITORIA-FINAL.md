@@ -87,4 +87,4 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 5. Configurar domínio próprio do Baru no Cloudflare.
 6. Trocar a senha inicial admin@gmail.com / admin123 antes de uso operacional.
 
-Commit de implementação auditado: 3d3fea3. O fechamento documental desta rodada será publicado em seguida; o SHA final pode ser conferido com git rev-parse HEAD.
+Commit de implementação auditado: a9bf8a2. O fechamento documental desta rodada será publicado em seguida; o SHA final pode ser conferido com git rev-parse HEAD.
