@@ -1,5 +1,5 @@
 import { areas as demoAreas, categories as demoCategories, content as demoContent, customers as demoCustomers, menuItems as demoMenuItems, moments as demoMoments, reservations as seedReservations, settings as demoSettings, tables as demoTables, team as demoTeam } from '@/lib/baru-data';
-import { collection, doc, getDoc, getDocs, runTransaction } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, runTransaction, where } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type Unsubscribe } from 'firebase/auth';
 import { firebaseAuth, firebaseDb, isFirebaseDataMode } from '@/lib/firebase-client';
 import type { Area, Customer, MenuCategory, MenuItem, PublicReservation, Reservation, RestaurantSettings, RestaurantTable, ServiceMoment, SiteContent, TeamMember } from '@/shared/baru-domain';
@@ -44,8 +44,9 @@ function reservationLockIds(reservation: Pick<Reservation, 'date' | 'time' | 'ta
 }
 
 function configuredReservationDuration(data?: Record<string, unknown>): number {
-  const duration = Number(data?.reservationDurationMinutes ?? demoSettings.reservationDurationMinutes);
-  return Number.isFinite(duration) && duration > 0 ? duration : demoSettings.reservationDurationMinutes;
+  const duration = Number(data?.reservationDurationMinutes);
+  if (!Number.isFinite(duration) || duration <= 0) throw new Error('A duração das reservas ainda não foi configurada no Firebase.');
+  return duration;
 }
 
 function hasLocalTableConflict(reservation: Pick<Reservation, 'date' | 'time' | 'tableId' | 'status'>, current: Reservation[]): boolean {
@@ -82,26 +83,41 @@ export async function readReservationsAsync(): Promise<Reservation[]> {
   return snapshot.docs.map((item) => item.data() as Reservation).sort((left, right) => `${left.date} ${left.time}`.localeCompare(`${right.date} ${right.time}`));
 }
 
-async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
+async function readCollection<T>(name: string, fallback: T[], activeOnly = false): Promise<T[]> {
   const db = firebaseDb;
   if (!isFirebaseDataMode() || !db) return fallback.map((item) => ({ ...item }));
-  const snapshot = await getDocs(collection(db, name));
+  const reference = collection(db, name);
+  const snapshot = await getDocs(activeOnly ? query(reference, where('active', '==', true)) : reference);
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as T);
 }
 
-export async function readMomentsAsync(): Promise<ServiceMoment[]> { return readCollection<ServiceMoment>('serviceMoments', demoMoments); }
-export async function readCategoriesAsync(): Promise<MenuCategory[]> { return readCollection<MenuCategory>('menuCategories', demoCategories); }
-export async function readMenuItemsAsync(): Promise<MenuItem[]> { return readCollection<MenuItem>('menuItems', demoMenuItems); }
+export async function readMomentsAsync(includeInactive = false): Promise<ServiceMoment[]> { return readCollection<ServiceMoment>('serviceMoments', demoMoments, !includeInactive); }
+export async function readCategoriesAsync(includeInactive = false): Promise<MenuCategory[]> { return readCollection<MenuCategory>('menuCategories', demoCategories, !includeInactive); }
+export async function readMenuItemsAsync(includeInactive = false): Promise<MenuItem[]> { return readCollection<MenuItem>('menuItems', demoMenuItems, !includeInactive); }
 export async function readAreasAsync(): Promise<Area[]> { return readCollection<Area>('areas', demoAreas); }
 export async function readTablesAsync(): Promise<RestaurantTable[]> { return readCollection<RestaurantTable>('tables', demoTables); }
 export async function readCustomersAsync(): Promise<Customer[]> { return readCollection<Customer>('customers', demoCustomers); }
 export async function readTeamAsync(): Promise<TeamMember[]> { return readCollection<TeamMember>('users', demoTeam); }
 
-export async function readSettingsAsync(): Promise<RestaurantSettings> {
+export async function readSettingsAsync(): Promise<RestaurantSettings | null> {
   const db = firebaseDb;
   if (!isFirebaseDataMode() || !db) return { ...demoSettings };
   const snapshot = await getDoc(doc(db, 'restaurantSettings', 'main'));
-  return snapshot.exists() ? { ...demoSettings, ...snapshot.data(), openingHours: { ...demoSettings.openingHours, ...(snapshot.data().openingHours || {}) } } as RestaurantSettings : { ...demoSettings, demoMode: false };
+  if (!snapshot.exists()) return null;
+  const data = snapshot.data() as Partial<RestaurantSettings>;
+  const openingHours = data.openingHours;
+  const requiredKeys: Array<keyof RestaurantSettings> = ['name', 'tagline', 'city', 'address', 'whatsapp', 'timezone', 'officialMenuUrl', 'onlineOrderingUrl'];
+  const complete = requiredKeys.every((key) => typeof data[key] === 'string')
+    && typeof data.maxPartySize === 'number'
+    && typeof data.reservationLeadHours === 'number'
+    && typeof data.reservationDurationMinutes === 'number'
+    && (data.confirmationMode === 'MANUAL' || data.confirmationMode === 'AUTOMATIC')
+    && typeof data.demoMode === 'boolean'
+    && openingHours && ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].every((day) => {
+      const value = openingHours[day as keyof typeof openingHours];
+      return value && typeof value.open === 'string' && typeof value.close === 'string' && typeof value.closed === 'boolean';
+    });
+  return complete ? data as RestaurantSettings : null;
 }
 
 export async function readContentAsync(): Promise<SiteContent | null> {
@@ -130,6 +146,12 @@ export function createReservation(input: ReservationInput): Reservation {
 export async function createReservationAsync(input: ReservationInput): Promise<Reservation | PublicReservation> {
   const db = firebaseDb;
   if (!isFirebaseDataMode() || !db) return createReservation(input);
+  if (input.source === 'SITE') {
+    const response = await fetch('/api/reservations', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ date: input.date, time: input.time, partySize: input.partySize, customerName: input.customerName, whatsapp: input.whatsapp, note: input.note, idempotencyKey: input.idempotencyKey || makeReservationIdentity() }) });
+    const payload = await response.json().catch(() => ({})) as { error?: string; code?: string };
+    if (!response.ok || !payload.code) throw new Error(payload.error || 'Não foi possível enviar a solicitação de reserva.');
+    return payload as PublicReservation;
+  }
   const idempotencyKey = input.idempotencyKey || makeReservationIdentity();
   const requestRef = doc(db, 'reservationRequests', idempotencyKey);
   return runTransaction(db, async (transaction) => {

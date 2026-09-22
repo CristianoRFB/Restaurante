@@ -16,8 +16,8 @@ BARU GASTRONOMIA — MAPA OFICIAL DE NAVEGAÇÃO
 
 /reserva/[codigo]
   Confirmação/detalhe da solicitação.
-  Código, data, horário, pessoas, nome, WhatsApp e status.
-  Ações: abrir WhatsApp, nova reserva, voltar ao início.
+  Código, data, horário, pessoas, nome, telefone mascarado e status.
+  Ações: nova reserva e voltar ao início.
 
 
 ÁREA ADMINISTRATIVA
@@ -50,10 +50,10 @@ BARU GASTRONOMIA — MAPA OFICIAL DE NAVEGAÇÃO
   Perfil do cliente, histórico, preferências, observações e datas importantes.
 
 /admin/cardapio
-  Gestão de categorias e itens do cardápio.
+  Leitura das categorias e itens reais do cardápio; edição permanece bloqueada até existir formulário persistente.
 
 /admin/mesas
-  Gestão de áreas, mesas, capacidades e estados.
+  Leitura de áreas, mesas, capacidades e estados; criação/edição permanece bloqueada até o cadastro persistente ser conectado.
 
 /admin/equipe
   Usuários, funções e permissões.
@@ -62,10 +62,10 @@ BARU GASTRONOMIA — MAPA OFICIAL DE NAVEGAÇÃO
   Métricas de reservas, pessoas, cancelamentos, no-show, horários e dias fortes.
 
 /admin/conteudo
-  CMS leve do site público: hero, chef, fotos, textos e redes sociais.
+  Visualização do conteúdo público publicado; salvar permanece bloqueado até o formulário persistente ser conectado.
 
 /admin/configuracoes
-  Horários, WhatsApp, endereço, capacidade, áreas/mesas, mensagens e configurações operacionais.
+  Visualização dos horários, WhatsApp, endereço, capacidade e configurações operacionais publicadas; salvar permanece bloqueado até o formulário persistente ser conectado.
 
 /admin/setup
   Tela/estado de modo demonstração e configuração do Firebase.
@@ -74,9 +74,9 @@ BARU GASTRONOMIA — MAPA OFICIAL DE NAVEGAÇÃO
 
 FLUXO PRINCIPAL DO CLIENTE
 
-Home -> Cardápio -> Reservar -> Confirmação
-Home -> Reservar -> Confirmação
-Cardápio -> Reservar -> Confirmação
+Home -> Cardápio -> Reservar -> confirmação, quando áreas/mesas reais estiverem cadastradas.
+Home -> Reservar -> confirmação, quando áreas/mesas reais estiverem cadastradas.
+Sem capacidade operacional publicada, o fluxo informa a pendência e não anuncia sucesso.
 
 
 FLUXO PRINCIPAL DA EQUIPE
@@ -95,8 +95,8 @@ REGRAS DE NAVEGAÇÃO
 - Desktop admin: sidebar persistente.
 - Mobile admin: bottom navigation com Início, Reservas, Agenda e Mais; páginas secundárias entram por "Mais" ou links contextuais.
 - Nunca duplicar uma mesma função em três rotas diferentes.
-- "Nova reserva" deve estar acessível do Dashboard, Reservas, Agenda e Cliente.
-- "Falar no WhatsApp" deve estar acessível em reserva e cliente.
+- "Nova reserva" fica acessível do Dashboard, Reservas e Agenda; a API bloqueia criação sem capacidade real.
+- "Falar no WhatsApp" usa somente links externos configurados; não existe inbox interna.
 - "Ver cliente" deve estar acessível a partir da reserva.
 - "Ver reserva" deve estar acessível a partir do cliente.
-- Quando Firebase não existir, usar repository mock/local; a navegação continua funcionando.
+- Quando Firebase não existir, usar repository mock/local; a navegação continua funcionando em modo explicitamente demo. Em Firebase, coleções vazias são estados vazios, nunca seeds silenciosas.

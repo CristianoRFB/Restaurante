@@ -20,9 +20,9 @@ O login da equipe usa Firebase Authentication por e-mail/senha e consulta users/
 
 ## Reserva pública
 
-O visitante pode criar somente uma solicitação NEW de origem SITE, com histórico inicial controlado, sem tableId e sem leitura da coleção operacional. A Rules exige coerência entre a reserva, a projeção pública e a chave de idempotência com getAfter. A confirmação pública lê somente os campos mínimos e exibe apenas os quatro últimos dígitos do WhatsApp.
+O visitante envia somente os dados mínimos para `POST /api/reservations`. O Worker valida o schema, horário, lead time, capacidade do grupo, idempotência e disponibilidade; a gravação em `reservations`, `publicReservations`, `reservationRequests` e `reservationLocks` usa credencial de serviço e uma transação Firestore. O navegador não possui mais permissão anônima para gravar nessas coleções.
 
-O limite estrutural de Rules não substitui um endpoint confiável para rate limiting, antiabuso e alocação concorrente de mesas. Overbooking de reserva confirmada deve ser fechado antes de abrir essa operação ao público.
+O endpoint expõe apenas a projeção mínima na confirmação e guarda somente os quatro últimos dígitos do WhatsApp no documento público. A operação responde explicitamente que as reservas aguardam o cadastro das mesas quando não existe capacidade operacional confirmada; não há seed de mesas em produção.
 
 ## Comandos
 

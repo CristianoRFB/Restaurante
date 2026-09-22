@@ -12,29 +12,29 @@ beforeAll(async () => {
   env = await initializeTestEnvironment({ projectId: 'demo-baru-gastronomia', firestore: { host: emulator[0], port: Number(emulator[1]), rules: readFileSync(resolve('firestore.rules'), 'utf8') } });
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (context) => { await setDoc(doc(context.firestore(), 'users/admin'), { role: 'ADMIN' }); await setDoc(doc(context.firestore(), 'users/service'), { role: 'SERVICE' }); await setDoc(doc(context.firestore(), 'users/cashier'), { role: 'CASHIER' }); });
+  await env.withSecurityRulesDisabled(async (context) => { await setDoc(doc(context.firestore(), 'reservations/res-test-1234'), reservation); });
 });
 
 afterAll(async () => { await env.cleanup(); });
 
 describe('Firestore rules do Baru', () => {
-  it('permitem solicitação pública válida, mas não leitura pública', async () => {
+  it('bloqueiam escrita operacional anônima e não leitura pública', async () => {
     const guest = env.unauthenticatedContext().firestore();
-    await assertSucceeds(setDoc(doc(guest, 'reservations/res-test-1234'), reservation));
+    await assertFails(setDoc(doc(guest, 'reservations/res-test-1234'), reservation));
     await assertFails(getDoc(doc(guest, 'reservations/res-test-1234')));
   });
 
-  it('criam reserva, projeção mínima e idempotência somente em operação coerente', async () => {
+  it('bloqueiam projeção e idempotência diretas; o endpoint confiável é o único escritor público', async () => {
     const guest = env.unauthenticatedContext().firestore();
     const transactionReservation = { ...reservation, id: 'res-public-1234', code: 'BRU-PUBLIC-1234', idempotencyKey: 'request-public-123456' };
     const publicReservation = { id: transactionReservation.id, code: transactionReservation.code, date: transactionReservation.date, time: transactionReservation.time, partySize: transactionReservation.partySize, customerName: transactionReservation.customerName, whatsappLast4: '7766', status: transactionReservation.status, createdAt: transactionReservation.createdAt, updatedAt: transactionReservation.updatedAt };
     const request = { idempotencyKey: transactionReservation.idempotencyKey, reservationId: transactionReservation.id, code: transactionReservation.code, createdAt: transactionReservation.createdAt };
-    await assertSucceeds(runTransaction(guest, async (transaction) => {
+    await assertFails(runTransaction(guest, async (transaction) => {
       transaction.set(doc(guest, `reservations/${transactionReservation.id}`), transactionReservation);
       transaction.set(doc(guest, `publicReservations/${transactionReservation.code}`), publicReservation);
       transaction.set(doc(guest, `reservationRequests/${request.idempotencyKey}`), request);
     }));
-    await assertSucceeds(getDoc(doc(guest, `publicReservations/${transactionReservation.code}`)));
-    await assertSucceeds(getDoc(doc(guest, `reservationRequests/${request.idempotencyKey}`)));
+    await assertFails(getDoc(doc(guest, `reservationRequests/${request.idempotencyKey}`)));
     await assertFails(getDoc(doc(guest, 'publicReservations/OUTRO-CODIGO')));
   });
 

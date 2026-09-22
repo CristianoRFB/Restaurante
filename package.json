@@ -19,6 +19,8 @@
     "test:domain": "vitest run --config vitest.config.ts tests/baru-domain.test.ts tests/baru-data.test.ts",
     "test:rules": "node scripts/test-rules.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:auth": "playwright test tests/e2e/admin.spec.ts",
+    "audit": "node scripts/audit.mjs",
     "emulators": "firebase emulators:start --project demo-baru-gastronomia --import=.firebase-data --export-on-exit=.firebase-data",
     "ci": "npm run lint && npm run typecheck && npm test && npm run build",
     "dev:vinext": "vinext dev --port 3001",

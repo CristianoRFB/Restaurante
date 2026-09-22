@@ -212,11 +212,13 @@ export function generateTimeSlots(settings: RestaurantSettings, date: string, in
   const [openHour, openMinute] = opening.open.split(':').map(Number);
   const [closeHour, closeMinute] = opening.close.split(':').map(Number);
   const open = openHour * 60 + openMinute;
-  const close = closeHour * 60 + closeMinute;
+  const configuredClose = closeHour * 60 + closeMinute;
+  const close = configuredClose <= open ? configuredClose + 24 * 60 : configuredClose;
   return Array.from({ length: Math.max(0, Math.ceil((close - open) / intervalMinutes)) }, (_, index) => {
     const minutes = open + index * intervalMinutes;
-    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-  }).filter((time) => time < opening.close);
+    const displayMinutes = minutes % (24 * 60);
+    return { minutes, time: `${String(Math.floor(displayMinutes / 60)).padStart(2, '0')}:${String(displayMinutes % 60).padStart(2, '0')}` };
+  }).filter(({ minutes }) => minutes < close).map(({ time }) => time);
 }
 
 function dateKeyInTimeZone(date = new Date(), timeZone = 'America/Sao_Paulo'): string {

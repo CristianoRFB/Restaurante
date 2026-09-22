@@ -11,7 +11,7 @@ function readEnvFile(file) {
   return values;
 }
 
-const env = { ...readEnvFile('.env.production.local'), ...process.env };
+const env = { ...readEnvFile('.env.production'), ...readEnvFile('.env.production.local'), ...process.env };
 const required = [
   'NEXT_PUBLIC_FIREBASE_API_KEY',
   'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
@@ -19,7 +19,6 @@ const required = [
   'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
   'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
   'NEXT_PUBLIC_FIREBASE_APP_ID',
-  'NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY',
 ];
 const missing = required.filter((key) => !String(env[key] ?? '').trim());
 const invalid = [];
@@ -36,3 +35,6 @@ if (missing.length || invalid.length) {
 }
 
 console.log(`Configuração de produção válida para o projeto ${env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.`);
+if (!String(env.NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY ?? '').trim() || env.NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY === 'COLE_AQUI') {
+  console.warn('Aviso: Firebase App Check ainda não está configurado; ative a chave do domínio final antes do uso público irrestrito.');
+}

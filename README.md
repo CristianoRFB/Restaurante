@@ -11,6 +11,8 @@ Produto web do Baru Gastronomia para presença pública, cardápio, pedidos onli
 
 O catálogo real publicado no Firebase foi cadastrado a partir do cardápio oficial: 23 categorias, 339 itens ativos, 3 agrupamentos de navegação e 3 destaques na home. Os preços, descrições e imagens exibidos em `/cardapio` vêm dessa carga real; o botão de compra continua levando ao iFood oficial para pagamento e acompanhamento do pedido.
 
+`restaurantSettings/main` também está publicado com o endereço, WhatsApp e horários operacionais reais/confirmados para o ambiente atual. A solicitação pública de reserva passa por `POST /api/reservations`, no Worker, com validação, rate limit de borda, idempotência e locks transacionais. Como ainda não há mesas/áreas operacionais confirmadas no Firebase, o endpoint recusa novas reservas com mensagem explícita; nenhum layout fictício foi usado para simular disponibilidade.
+
 O endereço padrão do Worker ainda pertence ao namespace Cloudflare disponível nesta conta. O domínio próprio do Baru continua sendo uma configuração externa pendente.
 
 ## Prints de referência e telas
@@ -32,7 +34,7 @@ A área pública de cliente está em `/conta`. O cliente pode criar sua própria
 
 ## Rotas
 
-Públicas: `/`, `/cardapio`, `/conta`, `/reservar`, `/reserva/[codigo]`.
+Públicas: `/`, `/cardapio`, `/conta`, `/reservar`, `/reserva/[codigo]`, `POST /api/reservations`.
 
 Admin: `/admin/login`, `/admin`, `/admin/reservas`, `/admin/reservas/nova`, `/admin/reservas/[id]/editar`, `/admin/agenda`, `/admin/clientes`, `/admin/clientes/[id]`, `/admin/cardapio`, `/admin/mesas`, `/admin/equipe`, `/admin/relatorios`, `/admin/conteudo`, `/admin/configuracoes`, `/admin/setup`.
 
@@ -53,6 +55,8 @@ npm run typecheck
 npm test
 npm run test:rules
 npm run test:e2e
+npm run test:e2e:auth # com E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD
+npm run audit
 npm run build
 ```
 
@@ -78,11 +82,12 @@ npx wrangler deploy --config wrangler.jsonc
 - `app/`: rotas Vinext/React, incluindo conta do cliente e cardápio público.
 - `components/`: shell público, shell admin e módulos de operação.
 - `lib/baru-data.ts`: seeds explícitos apenas para o modo demo.
-- `lib/baru-repository.ts`: adapters local/Firebase para reservas, catálogo, equipe, conteúdo, configurações e autenticação administrativa.
+- `lib/baru-repository.ts`: adapters local/Firebase para catálogo, equipe, conteúdo, configurações e autenticação administrativa; a criação pública delega ao endpoint confiável.
+- `app/api/reservations/route.ts`: fronteira server-side para receber reservas, validar o domínio e gravar a operação com credencial de serviço no Worker.
 - `lib/customer-account.ts`: autenticação Firebase e perfil privado do cliente.
 - `shared/baru-domain.ts`: entidades, validações, status e formatação.
 - `firestore.rules`: autorização por papel, perfil de cliente e validações de dados.
-- `playwright.config.ts` e `tests/e2e/`: smoke E2E público contra o Worker publicado, incluindo viewport móvel e 404 do módulo removido.
+- `playwright.config.ts` e `tests/e2e/`: smoke público, casos adversariais, navegação dos módulos admin com sessão real e 404 do módulo removido.
 
 ## Documentação
 

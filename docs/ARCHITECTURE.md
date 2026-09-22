@@ -6,7 +6,8 @@ O produto é uma aplicação React/TypeScript compilada por Vinext/Vite para Clo
 
 - shared/baru-domain.ts: entidades, validações, horários de funcionamento e projeção pública da reserva.
 - lib/baru-data.ts: seeds isolados do modo demo; não são usados como fallback de dados operacionais quando NEXT_PUBLIC_DATA_MODE=firebase.
-- lib/baru-repository.ts: adapters local/Firebase para reservas, catálogo, clientes, mesas, conteúdo, configurações, equipe e autenticação administrativa.
+- lib/baru-repository.ts: adapters local/Firebase para catálogo, clientes, mesas, conteúdo, configurações, equipe e autenticação administrativa; a criação pública de reservas chama a fronteira server-side.
+- app/api/reservations/route.ts: endpoint confiável que valida, aplica idempotência e aloca mesa com locks transacionais no Firestore.
 - lib/customer-account.ts: autenticação Firebase por e-mail/senha e perfil privado em customerAccounts/{uid}.
 - components/admin-shell.tsx: sessão, navegação e autorização de rota. Equipe é exclusiva de ADMIN.
 - firestore.rules: autorização por papel e validação estrutural no backend.
@@ -16,7 +17,7 @@ O produto é uma aplicação React/TypeScript compilada por Vinext/Vite para Clo
 
 Em modo Firebase, coleções vazias aparecem como estado vazio ou “não cadastrado”; o painel não mistura seeds fictícios com dados reais. O cardápio público direciona pedido ao iFood oficial enquanto não existe checkout próprio implementado.
 
-A reserva pública grava a solicitação operacional, a projeção pública mínima e a chave idempotente em uma operação transacional. A projeção pública não contém o WhatsApp completo. O cliente escolhe apenas data, horário e quantidade; mesa e status privilegiados permanecem fora do fluxo público.
+A reserva pública envia somente data, horário, grupo e dados mínimos ao endpoint. O Worker grava a solicitação operacional, a projeção pública mínima, a chave idempotente e os locks em uma operação transacional. A projeção pública não contém o WhatsApp completo. Sem áreas/mesas reais publicadas, a API bloqueia a solicitação em vez de criar uma reserva sem capacidade conhecida.
 
 ## Autorização
 

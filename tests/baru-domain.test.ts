@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeReservationCode, normalizeWhatsapp, validateReservation } from '@/shared/baru-domain';
+import { generateTimeSlots, makeReservationCode, normalizeWhatsapp, validateReservation } from '@/shared/baru-domain';
 import { settings } from '@/lib/baru-data';
 
 describe('domínio de reservas do Baru', () => {
@@ -19,5 +19,13 @@ describe('domínio de reservas do Baru', () => {
   it('rejeita datas de calendário impossíveis e gera códigos sem sufixo previsível curto', () => {
     expect(validateReservation({ date: '2026-02-31', time: '19:30', partySize: 2, customerName: 'Ana Clara', whatsapp: '5545999887766', note: '' }, settings)).toContain('Escolha uma data válida.');
     expect(makeReservationCode(123456789)).toMatch(/^BRU-[A-Z0-9]{8}$/);
+  });
+
+  it('gera horários quando o funcionamento atravessa a meia-noite', () => {
+    const overnight = { ...settings, openingHours: { ...settings.openingHours, monday: { open: '18:00', close: '00:00', closed: false } } };
+    const slots = generateTimeSlots(overnight, '2099-09-28');
+    expect(slots[0]).toBe('18:00');
+    expect(slots.at(-1)).toBe('23:30');
+    expect(slots).not.toContain('00:00');
   });
 });

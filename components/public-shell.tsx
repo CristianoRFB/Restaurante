@@ -2,9 +2,12 @@
 
 import { Menu, MapPin, Phone, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LinkButton } from '@/components/baru-ui';
 import { settings } from '@/lib/baru-data';
+import { readSettingsAsync } from '@/lib/baru-repository';
+import { isFirebaseDataMode } from '@/lib/firebase-client';
+import type { RestaurantSettings } from '@/shared/baru-domain';
 
 export function PublicHeader() {
   const [open, setOpen] = useState(false);
@@ -13,13 +16,15 @@ export function PublicHeader() {
 }
 
 export function PublicFooter() {
-  return <footer className="public-footer"><div className="public-footer__inner"><span>BARU Gastronomia · {settings.city}</span><span><MapPin size={13} style={{ display: 'inline', verticalAlign: 'middle' }} /> {settings.address} · <Phone size={13} style={{ display: 'inline', verticalAlign: 'middle' }} /> WhatsApp</span></div></footer>;
+  const [liveSettings, setLiveSettings] = useState<RestaurantSettings | null>(() => isFirebaseDataMode() ? null : settings);
+  useEffect(() => { let active = true; readSettingsAsync().then((next) => { if (active) setLiveSettings(next); }).catch(() => undefined); return () => { active = false; }; }, []);
+  return <footer className="public-footer"><div className="public-footer__inner"><span>BARU Gastronomia · {liveSettings?.city || 'Conteúdo público'}</span>{liveSettings ? <span><MapPin size={13} style={{ display: 'inline', verticalAlign: 'middle' }} /> {liveSettings.address} · <Phone size={13} style={{ display: 'inline', verticalAlign: 'middle' }} /> WhatsApp</span> : <span>Informações operacionais aguardando configuração</span>}</div></footer>;
 }
 
 export function PublicLayout({ children }: { children: ReactNode }) {
   return <div className="app-page"><PublicHeader />{children}<PublicFooter /></div>;
 }
 
-export function PageHero({ eyebrow, title, description, imageUrl, children, className = '' }: { eyebrow: string; title: string; description: string; imageUrl: string; children?: ReactNode; className?: string }) {
-  return <section className={`hero ${className}`} style={{ '--hero-image': `url(${imageUrl})` } as React.CSSProperties}><div className="hero__inner"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{description}</p>{children}</div><p className="hero__note">Boa comida<br />aproxima pessoas.</p></section>;
+export function PageHero({ eyebrow, title, description, imageUrl, children, className = '' }: { eyebrow: string; title: string; description: string; imageUrl?: string; children?: ReactNode; className?: string }) {
+  return <section className={`hero ${className}`} style={{ '--hero-image': imageUrl ? `url(${imageUrl})` : 'none' } as React.CSSProperties}><div className="hero__inner"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{description}</p>{children}</div><p className="hero__note">Boa comida<br />aproxima pessoas.</p></section>;
 }
