@@ -8,6 +8,22 @@ service cloud.firestore {
     function isAdmin() { return role() == 'ADMIN'; }
     function validMoment(data) { return data.name is string && data.description is string && data.imageUrl is string && data.active is bool && data.displayOrder is int; }
     function validMenuItem(data) { return data.name is string && data.description is string && data.categoryId is string && data.priceCents is int && data.priceCents >= 0 && data.imageUrl is string && data.active is bool && data.featured is bool && data.displayOrder is int && data.serviceMomentIds is list; }
+    function validArea(data) {
+      return data.keys().hasOnly(['id', 'name', 'active', 'displayOrder'])
+        && data.id is string && data.id.size() >= 8 && data.id.size() <= 100
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 80
+        && data.active is bool
+        && data.displayOrder is int && data.displayOrder >= 0 && data.displayOrder <= 999;
+    }
+    function validTable(data) {
+      return data.keys().hasOnly(['id', 'areaId', 'name', 'capacity', 'active', 'state'])
+        && data.id is string && data.id.size() >= 8 && data.id.size() <= 100
+        && data.areaId is string && data.areaId.size() >= 1 && data.areaId.size() <= 100
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 60
+        && data.capacity is int && data.capacity >= 1 && data.capacity <= 20
+        && data.active is bool
+        && data.state in ['AVAILABLE', 'RESERVED', 'OCCUPIED', 'MAINTENANCE'];
+    }
     function validReservation(data) {
       return data.keys().hasOnly(['id', 'code', 'date', 'time', 'partySize', 'customerId', 'customerName', 'whatsapp', 'note', 'status', 'tableId', 'momentId', 'source', 'history', 'createdAt', 'updatedAt', 'idempotencyKey'])
         && data.id is string && data.id.size() >= 8 && data.id.size() <= 100
@@ -59,8 +75,18 @@ service cloud.firestore {
     match /serviceMoments/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update, delete: if isAdmin() && validMoment(request.resource.data); }
     match /menuCategories/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update, delete: if isManager(); }
     match /menuItems/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update: if isManager() && validMenuItem(request.resource.data); allow delete: if isAdmin(); }
-    match /areas/{id} { allow read: if isStaff(); allow write: if isManager(); }
-    match /tables/{id} { allow read: if isStaff(); allow write: if isManager(); }
+    match /areas/{id} {
+      allow read: if isStaff();
+      allow create: if isManager() && validArea(request.resource.data) && request.resource.data.id == id;
+      allow update: if isManager() && validArea(request.resource.data) && request.resource.data.id == id;
+      allow delete: if isManager();
+    }
+    match /tables/{id} {
+      allow read: if isStaff();
+      allow create: if isManager() && validTable(request.resource.data) && request.resource.data.id == id;
+      allow update: if isManager() && validTable(request.resource.data) && request.resource.data.id == id;
+      allow delete: if isManager();
+    }
     match /customers/{id} { allow read: if isStaff(); allow create, update: if isStaff(); allow delete: if isManager(); }
     match /reservations/{id} {
       allow read: if isStaff();

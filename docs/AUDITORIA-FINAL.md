@@ -10,9 +10,9 @@ O sistema deixou de usar o módulo administrativo fictício de Atendimento/Whats
 
 O ambiente está conectado ao Firebase real `restaurante-5665d`. O login administrativo usa Firebase Authentication, o perfil `admin@gmail.com` tem papel `ADMIN`, a área do cliente está publicada em `/conta` e o catálogo oficial foi cadastrado no Firestore com 23 categorias, 339 itens ativos, 3 momentos de serviço e 3 destaques.
 
-O pedido de comida é real, mas segue para o canal oficial do iFood. O site não finge processar pagamento ou entrega internamente. A reserva pública passa por `POST /api/reservations`, com validação server-side, idempotência, locks e Rules sem escrita anônima direta na coleção operacional. Como ainda não há mesas/áreas reais cadastradas, o endpoint responde 409 explicando a pendência; ele não cria uma reserva fictícia.
+O pedido de comida é real, mas segue para o canal oficial do iFood. O site não finge processar pagamento ou entrega internamente. A reserva pública passa por `POST /api/reservations`, com validação server-side, idempotência, locks e Rules sem escrita anônima direta na coleção operacional. O painel `/admin/mesas` já possui cadastro real de áreas e mesas com validação e Rules endurecidas; como ainda não há estrutura operacional cadastrada, o endpoint responde 409 explicando a pendência e não cria uma reserva fictícia.
 
-Não é nota 10 nem prontidão irrestrita de produção. Faltam App Check, cadastro operacional das mesas, domínio próprio, testes de concorrência e ampliação da observabilidade. Essas lacunas estão explícitas e bloqueiam a declaração de “produção pronta”.
+Não é nota 10 nem prontidão irrestrita de produção. Faltam App Check, preenchimento da estrutura operacional, domínio próprio, testes de concorrência e ampliação da observabilidade. Essas lacunas estão explícitas e bloqueiam a declaração de “produção pronta”.
 
 ## Percentual de maturidade
 
@@ -25,9 +25,9 @@ O percentual considera código publicado, dados reais, segurança, testes e oper
 | Área | Nota | Evidência e limite restante |
 |---|---:|---|
 | Funcionalidade pública | 8/10 | Home, cardápio, conta, reserva, iFood e páginas de confirmação estão publicados; compra própria não é processada no site. |
-| Firebase real | 8/10 | Auth, Firestore, catálogo, conteúdo e configurações reais publicados; mesas, áreas e operação de reservas ainda precisam de cadastro. |
+| Firebase real | 8/10 | Auth, Firestore, catálogo, conteúdo, configurações e formulários reais de mesas/áreas publicados; a estrutura operacional ainda precisa ser cadastrada. |
 | Segurança e Rules | 8/10 | Rules sem escrita anônima direta em `reservations`, endpoint com whitelist de campos, rate limit persistente e CSP/headers ativos; App Check falta. |
-| Reservas e integridade | 8/10 | Validação, idempotência, locks, duração configurável, projeção pública mínima e ID inexistente sem fallback; falta teste de carga concorrente e mesas reais. |
+| Reservas e integridade | 8/10 | Validação, idempotência, locks, duração configurável, projeção pública mínima, ID inexistente sem fallback e cadastro real de mesas/áreas; falta teste de carga concorrente e preenchimento operacional. |
 | E2E e qualidade | 8/10 | Lint, typecheck, build, 8 testes unitários, 6 testes Rules, smoke público 5/5 e suíte autenticada 3/3; falta ampliar cenários de escrita e concorrência. |
 | UX desktop/mobile | 8/10 | Rotas públicas e módulos administrativos navegáveis; menu móvel e estados de carregamento/erro foram verificados; falta matriz visual maior. |
 | Documentação | 8/10 | README, arquitetura, Firebase, segurança, deploy, testes e esta auditoria refletem o estado atual; ainda há decisões operacionais para registrar quando as mesas forem cadastradas. |
@@ -46,6 +46,7 @@ O percentual considera código publicado, dados reais, segurança, testes e oper
 - Consulta pública expõe somente `whatsappLast4`.
 - Escrita anônima direta em `reservations` e `reservationRequests` foi bloqueada.
 - O endpoint server-side rejeita campos privilegiados antes de tocar o Firebase e retorna 409 quando não há mesas disponíveis.
+- O painel de mesas cadastra áreas e mesas no Firebase; as Rules validam campos, capacidade, estado e correspondência entre ID do documento e ID do payload.
 - O rate limit público usa o binding persistente `RESERVATION_RATE_LIMIT` em Cloudflare KV, com chave derivada por hash do IP.
 - Slots derivam de `openingHours`, timezone, antecedência mínima e duração configuradas.
 - Botões sem persistência foram removidos, desabilitados ou marcados explicitamente como demo.
@@ -58,7 +59,7 @@ O percentual considera código publicado, dados reais, segurança, testes e oper
 - `npm run lint` — aprovado.
 - `npm run typecheck` — aprovado.
 - `npm test -- --run` — 8 testes unitários aprovados.
-- `npm run test:rules` — 6 testes de Rules aprovados, emulador em `127.0.0.1:8180`.
+- `npm run test:rules` — 7 testes de Rules aprovados, emulador em `127.0.0.1:8180`.
 - `npm run build` — aprovado; rotas incluindo `/api/reservations` foram enumeradas.
 - `npm run deploy:firebase` — Rules e índices publicados no projeto `restaurante-5665d`; App Check permanece como aviso de configuração pendente.
 - `npm run test:e2e` — 5 testes públicos/adversariais aprovados; 3 testes autenticados são ignorados sem credenciais.
@@ -66,13 +67,13 @@ O percentual considera código publicado, dados reais, segurança, testes e oper
 - Smoke remoto — `/`, `/cardapio`, `/conta`, `/reservar`, `/admin/login` retornaram 200; `/admin/atendimento` retornou 404.
 - Smoke remoto do endpoint — payload com `status` privilegiado retornou 400; payload válido sem mesas retornou 409.
 - Smoke visual no navegador — `/cardapio` mostrou categorias, busca, filtros, preços, descrições, imagens reais (incluindo `POLENTA BROSTOLADA`) e links oficiais do iFood.
-- Worker publicado nesta rodada: `8831fa7d-1f53-488d-ae3c-37e7f77afb3a`.
+- Worker publicado nesta rodada: `85e9664a-e9a7-4d01-bfec-6c7939ad1c5e`.
 - Remoto Git confirmado: `https://github.com/CristianoRFB/Restaurante.git`.
 
 ## Pendências que impedem 100%
 
 1. Ativar Firebase App Check no domínio final.
-2. Cadastrar áreas e mesas reais no Firebase e testar reservas com capacidade operacional real.
+2. Cadastrar áreas e mesas reais pelo painel `/admin/mesas` e testar reservas com capacidade operacional real.
 3. Adicionar E2E de criação, confirmação, cancelamento e concorrência de reservas.
 4. Configurar domínio próprio e observabilidade/alertas de produção.
 5. Trocar a senha inicial `admin@gmail.com` / `admin123` antes do uso operacional.

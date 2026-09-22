@@ -1,11 +1,11 @@
 'use client';
 
-import { BookOpen, CalendarDays, Check, ChevronRight, CircleAlert, Clock3, Edit3, ExternalLink, Image as ImageIcon, MapPin, MessageCircle, MoreHorizontal, Plus, Save, Search, Settings2, Table2, UserPlus, Users, Utensils, X } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ChevronRight, CircleAlert, Clock3, Edit3, ExternalLink, Image as ImageIcon, MapPin, MessageCircle, MoreHorizontal, Plus, Save, Search, Settings2, Table2, Users, Utensils, X } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { AdminPage } from '@/components/admin-shell';
 import { Button, LinkButton, StatCard, StatusBadge } from '@/components/baru-ui';
 import { areas, categories, content, customers, menuItems, photoUrls, reservations as seedReservations, settings, tables, team } from '@/lib/baru-data';
-import { buildWhatsappLink, createReservationAsync, readAreasAsync, readCategoriesAsync, readContentAsync, readCustomersAsync, readMenuItemsAsync, readReservations, readReservationsAsync, readSettingsAsync, readTablesAsync, readTeamAsync, updateReservationAsync } from '@/lib/baru-repository';
+import { buildWhatsappLink, createAreaAsync, createReservationAsync, createTableAsync, readAreasAsync, readCategoriesAsync, readContentAsync, readCustomersAsync, readMenuItemsAsync, readReservations, readReservationsAsync, readSettingsAsync, readTablesAsync, readTeamAsync, updateReservationAsync } from '@/lib/baru-repository';
 import { appCheckEnabled, firebaseConfigured, firebaseProjectId, firebaseSdkConfigAvailable, isFirebaseDataMode, productionEnvironmentReady } from '@/lib/firebase-client';
 import { formatDate, formatMoney, generateTimeSlots, normalizeWhatsapp, RESERVATION_STATUS_LABELS, ROLE_LABELS, validateReservation, type Reservation, type ReservationStatus, type RestaurantSettings, type RestaurantTable, type SiteContent, type TeamMember } from '@/shared/baru-domain';
 
@@ -14,7 +14,12 @@ function useRepositoryCollection<T>(demoItems: T[], loader: () => Promise<T[]>) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   useEffect(() => { let active = true; setLoading(true); loader().then((next) => { if (active) setItems(next); }).catch(() => { if (active) setError('Não foi possível carregar os dados reais deste módulo.'); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [loader]);
-  return { items, loading, error };
+  const reload = async () => {
+    setLoading(true);
+    setError('');
+    try { setItems(await loader()); } catch { setError('Não foi possível carregar os dados reais deste módulo.'); } finally { setLoading(false); }
+  };
+  return { items, loading, error, reload };
 }
 
 function useRepositorySettings() {
@@ -110,9 +115,51 @@ export function MenuManagerView() {
 }
 
 export function TablesView() {
-  const { items: liveAreas, error: areasError } = useRepositoryCollection(areas, readAreasAsync);
-  const { items: liveTables, error: tablesError } = useRepositoryCollection(tables, readTablesAsync);
-  return <AdminPage active="/admin/mesas" title="Mesas e áreas" subtitle="Dados de áreas e mesas do repository atual." actions={<><Button variant="ghost" disabled title="O formulário de áreas ainda não está conectado ao Firebase."><Plus size={16} /> Nova área indisponível</Button><Button disabled title="O formulário de mesas ainda não está conectado ao Firebase."><Plus size={16} /> Nova mesa indisponível</Button></>}>{(areasError || tablesError) && <p className="field-error" role="alert">{areasError || tablesError}</p>}<div className="card-grid">{liveAreas.map((area) => { const areaTables = liveTables.filter((table) => table.areaId === area.id); return <article className="settings-card" key={area.id}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}><div><p className="eyebrow">{area.active ? 'Área ativa' : 'Área inativa'}</p><h2>{area.name}</h2><p>{areaTables.length} mesas · {areaTables.reduce((sum, table) => sum + table.capacity, 0)} lugares</p></div><span className="muted">Somente leitura</span></div><div className="data-list">{areaTables.slice(0, 5).map((table) => <div className="data-row" key={`${area.id}-${table.id}`} style={{ gridTemplateColumns: '1fr auto' }}><div><strong>{table.name}</strong><div className="table-secondary">{table.capacity} lugares</div></div><StatusBadge status={table.state === 'AVAILABLE' ? 'CONFIRMED' : table.state === 'MAINTENANCE' ? 'CANCELLED' : 'NEW'} /></div>)}{!areaTables.length && <p className="muted">Nenhuma mesa cadastrada nesta área.</p>}</div></article>; })}{!liveAreas.length && <div className="empty-state"><Table2 size={20} /><h2>Áreas reais ainda não cadastradas</h2><p>Cadastre áreas e mesas no Firebase antes de operar este módulo.</p></div>}</div></AdminPage>;
+  const { items: liveAreas, loading: areasLoading, error: areasError, reload: reloadAreas } = useRepositoryCollection(areas, readAreasAsync);
+  const { items: liveTables, loading: tablesLoading, error: tablesError, reload: reloadTables } = useRepositoryCollection(tables, readTablesAsync);
+  const [areaFormOpen, setAreaFormOpen] = useState(false);
+  const [tableFormOpen, setTableFormOpen] = useState(false);
+  const [areaForm, setAreaForm] = useState({ name: '', displayOrder: '0' });
+  const [tableForm, setTableForm] = useState({ areaId: '', name: '', capacity: '2' });
+  const [saving, setSaving] = useState<'area' | 'table' | null>(null);
+  const [actionError, setActionError] = useState('');
+  const [saved, setSaved] = useState('');
+  const saveArea = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving('area');
+    setActionError('');
+    setSaved('');
+    try {
+      await createAreaAsync({ name: areaForm.name, displayOrder: Number(areaForm.displayOrder) });
+      await reloadAreas();
+      setAreaForm({ name: '', displayOrder: String(liveAreas.length + 1) });
+      setAreaFormOpen(false);
+      setSaved('Área cadastrada no Firebase.');
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : 'Não foi possível cadastrar a área.');
+    } finally {
+      setSaving(null);
+    }
+  };
+  const saveTable = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving('table');
+    setActionError('');
+    setSaved('');
+    try {
+      await createTableAsync({ areaId: tableForm.areaId, name: tableForm.name, capacity: Number(tableForm.capacity) });
+      await reloadTables();
+      setTableForm({ areaId: tableForm.areaId, name: '', capacity: '2' });
+      setTableFormOpen(false);
+      setSaved('Mesa cadastrada no Firebase.');
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : 'Não foi possível cadastrar a mesa.');
+    } finally {
+      setSaving(null);
+    }
+  };
+  const forms = <>{areaFormOpen && <form className="form-card" onSubmit={saveArea} style={{ marginBottom: 18 }}><h2>Nova área</h2><div className="form-row"><label className="form-label"><span>Nome *</span><input value={areaForm.name} onChange={(event) => setAreaForm((current) => ({ ...current, name: event.target.value }))} placeholder="Salão principal" required maxLength={80} /></label><label className="form-label"><span>Ordem *</span><input type="number" min="0" max="999" value={areaForm.displayOrder} onChange={(event) => setAreaForm((current) => ({ ...current, displayOrder: event.target.value }))} required /></label></div><div className="form-actions"><Button type="button" variant="ghost" onClick={() => setAreaFormOpen(false)}>Cancelar</Button><Button type="submit" disabled={saving !== null}><Save size={16} /> {saving === 'area' ? 'Salvando…' : 'Cadastrar área'}</Button></div></form>}{tableFormOpen && <form className="form-card" onSubmit={saveTable} style={{ marginBottom: 18 }}><h2>Nova mesa</h2><div className="form-row"><label className="form-label"><span>Área *</span><select value={tableForm.areaId} onChange={(event) => setTableForm((current) => ({ ...current, areaId: event.target.value }))} required><option value="">Selecione uma área</option>{liveAreas.filter((area) => area.active).map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label><label className="form-label"><span>Nome *</span><input value={tableForm.name} onChange={(event) => setTableForm((current) => ({ ...current, name: event.target.value }))} placeholder="Mesa 01" required maxLength={60} /></label><label className="form-label"><span>Lugares *</span><input type="number" min="1" max="20" value={tableForm.capacity} onChange={(event) => setTableForm((current) => ({ ...current, capacity: event.target.value }))} required /></label></div><div className="form-actions"><Button type="button" variant="ghost" onClick={() => setTableFormOpen(false)}>Cancelar</Button><Button type="submit" disabled={saving !== null || !liveAreas.length}><Save size={16} /> {saving === 'table' ? 'Salvando…' : 'Cadastrar mesa'}</Button></div></form>}</>;
+  return <AdminPage active="/admin/mesas" title="Mesas e áreas" subtitle="Cadastre a estrutura operacional real do restaurante no Firebase." actions={<><Button variant="ghost" onClick={() => { setAreaFormOpen((value) => !value); setTableFormOpen(false); setActionError(''); }}><Plus size={16} /> Nova área</Button><Button onClick={() => { setTableFormOpen((value) => !value); setAreaFormOpen(false); setActionError(''); setTableForm((current) => ({ ...current, areaId: current.areaId || liveAreas[0]?.id || '' })); }}><Plus size={16} /> Nova mesa</Button></>}>{(areasError || tablesError || actionError) && <p className="field-error" role="alert">{areasError || tablesError || actionError}</p>}{saved && <p className="field-error" style={{ color: 'var(--success)' }} role="status">{saved}</p>}{forms}<div className="card-grid">{liveAreas.map((area) => { const areaTables = liveTables.filter((table) => table.areaId === area.id); return <article className="settings-card" key={area.id}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}><div><p className="eyebrow">{area.active ? 'Área ativa' : 'Área inativa'}</p><h2>{area.name}</h2><p>{areaTables.length} mesas · {areaTables.reduce((sum, table) => sum + table.capacity, 0)} lugares</p></div><span className="muted">Firebase</span></div><div className="data-list">{areaTables.slice(0, 5).map((table) => <div className="data-row" key={`${area.id}-${table.id}`} style={{ gridTemplateColumns: '1fr auto' }}><div><strong>{table.name}</strong><div className="table-secondary">{table.capacity} lugares</div></div><StatusBadge status={table.state === 'AVAILABLE' ? 'CONFIRMED' : table.state === 'MAINTENANCE' ? 'CANCELLED' : 'NEW'} /></div>)}{!areaTables.length && <p className="muted">Nenhuma mesa cadastrada nesta área.</p>}</div></article>; })}{!areasLoading && !tablesLoading && !liveAreas.length && <div className="empty-state"><Table2 size={20} /><h2>Áreas reais ainda não cadastradas</h2><p>Use “Nova área” para cadastrar a estrutura operacional antes de receber reservas com mesa.</p></div>}{(areasLoading || tablesLoading) && <div className="loading-state">Carregando áreas e mesas reais…</div>}</div></AdminPage>;
 }
 
 export function TeamView() {
@@ -124,7 +171,7 @@ export function TeamView() {
   const filtered = members.filter((member) => `${member.name} ${member.email} ${member.role}`.toLowerCase().includes(query.toLowerCase()));
   const selected = members.find((member) => member.id === selectedId) || filtered[0] || null;
   const permissionLabels: Array<[string, string]> = [['Reservas', 'RESERVATIONS'], ['Agenda', 'AGENDA'], ['Clientes', 'CUSTOMERS'], ['Cardápio', 'MENU'], ['Relatórios', 'REPORTS'], ['Configurações', 'SETTINGS']];
-  return <AdminPage active="/admin/equipe" title="Equipe" subtitle="Usuários e permissões lidos do Firebase." actions={<Button disabled><UserPlus size={17} /> Convites em breve</Button>}>{error && <p className="field-error" role="alert">{error}</p>}<section className="admin-panel"><div className="admin-toolbar" style={{ padding: '18px 22px', margin: 0, borderBottom: '1px solid var(--line)' }}><label className="field-shell" style={{ flex: 1, maxWidth: 560 }}><Search size={16} /><span className="visually-hidden">Buscar equipe</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nome, e-mail ou função…" /></label></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Nome</th><th>Função</th><th>Permissões</th><th>Status</th><th>Último acesso</th><th /></tr></thead><tbody>{filtered.map((member) => <tr key={member.id} onClick={() => setSelectedId(member.id)} style={{ cursor: 'pointer', background: selected?.id === member.id ? 'var(--cream)' : undefined }}><td><div className="table-primary">{member.name}</div><div className="table-secondary">{member.email}</div></td><td>{ROLE_LABELS[member.role]}</td><td>{member.permissions.length} de 6</td><td><span className={`status-badge ${member.active ? 'status-badge--success' : 'status-badge--danger'}`}><span className="status-dot" />{member.active ? 'Ativo' : 'Suspenso'}</span></td><td>{member.lastAccess || '—'}</td><td><MoreHorizontal size={17} /></td></tr>)}</tbody></table>{!filtered.length && <div className="empty-state"><Users size={20} /><h2>Nenhum membro cadastrado</h2><p>Cadastre usuários no Firebase para que apareçam nesta área.</p></div>}</div></section>{selected && <section className="settings-card" style={{ marginTop: 18 }}><h2>{selected.name}</h2><p>{selected.email} · {ROLE_LABELS[selected.role]}</p><div className="filter-pills">{permissionLabels.map(([label, permission]) => <span className={`filter-pill ${selected.permissions.includes(permission) ? 'active' : ''}`} key={permission}>{selected.permissions.includes(permission) ? '✓ ' : ''}{label}</span>)}</div></section>}</AdminPage>;
+  return <AdminPage active="/admin/equipe" title="Equipe" subtitle="Usuários e permissões lidos do Firebase.">{error && <p className="field-error" role="alert">{error}</p>}<section className="admin-panel"><div className="admin-toolbar" style={{ padding: '18px 22px', margin: 0, borderBottom: '1px solid var(--line)' }}><label className="field-shell" style={{ flex: 1, maxWidth: 560 }}><Search size={16} /><span className="visually-hidden">Buscar equipe</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nome, e-mail ou função…" /></label></div><div className="table-wrap"><table className="data-table"><thead><tr><th>Nome</th><th>Função</th><th>Permissões</th><th>Status</th><th>Último acesso</th><th /></tr></thead><tbody>{filtered.map((member) => <tr key={member.id} onClick={() => setSelectedId(member.id)} style={{ cursor: 'pointer', background: selected?.id === member.id ? 'var(--cream)' : undefined }}><td><div className="table-primary">{member.name}</div><div className="table-secondary">{member.email}</div></td><td>{ROLE_LABELS[member.role]}</td><td>{member.permissions.length} de 6</td><td><span className={`status-badge ${member.active ? 'status-badge--success' : 'status-badge--danger'}`}><span className="status-dot" />{member.active ? 'Ativo' : 'Suspenso'}</span></td><td>{member.lastAccess || '—'}</td><td><MoreHorizontal size={17} /></td></tr>)}</tbody></table>{!filtered.length && <div className="empty-state"><Users size={20} /><h2>Nenhum membro cadastrado</h2><p>Cadastre usuários no Firebase para que apareçam nesta área.</p></div>}</div></section>{selected && <section className="settings-card" style={{ marginTop: 18 }}><h2>{selected.name}</h2><p>{selected.email} · {ROLE_LABELS[selected.role]}</p><div className="filter-pills">{permissionLabels.map(([label, permission]) => <span className={`filter-pill ${selected.permissions.includes(permission) ? 'active' : ''}`} key={permission}>{selected.permissions.includes(permission) ? '✓ ' : ''}{label}</span>)}</div></section>}</AdminPage>;
 }
 
 export function ReportsView() {

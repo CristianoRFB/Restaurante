@@ -11,7 +11,7 @@ beforeAll(async () => {
   const emulator = process.env.FIRESTORE_EMULATOR_HOST?.split(':') ?? ['127.0.0.1', '8180'];
   env = await initializeTestEnvironment({ projectId: 'demo-baru-gastronomia', firestore: { host: emulator[0], port: Number(emulator[1]), rules: readFileSync(resolve('firestore.rules'), 'utf8') } });
   await env.clearFirestore();
-  await env.withSecurityRulesDisabled(async (context) => { await setDoc(doc(context.firestore(), 'users/admin'), { role: 'ADMIN' }); await setDoc(doc(context.firestore(), 'users/service'), { role: 'SERVICE' }); await setDoc(doc(context.firestore(), 'users/cashier'), { role: 'CASHIER' }); });
+  await env.withSecurityRulesDisabled(async (context) => { await setDoc(doc(context.firestore(), 'users/admin'), { role: 'ADMIN' }); await setDoc(doc(context.firestore(), 'users/manager'), { role: 'MANAGER' }); await setDoc(doc(context.firestore(), 'users/service'), { role: 'SERVICE' }); await setDoc(doc(context.firestore(), 'users/cashier'), { role: 'CASHIER' }); });
   await env.withSecurityRulesDisabled(async (context) => { await setDoc(doc(context.firestore(), 'reservations/res-test-1234'), reservation); });
 });
 
@@ -42,6 +42,17 @@ describe('Firestore rules do Baru', () => {
     const guest = env.unauthenticatedContext().firestore();
     const forged = { id: 'res-forged-1234', code: 'BRU-FORGED-1234', date: reservation.date, time: reservation.time, partySize: 2, customerName: 'Ana Clara', whatsapp: reservation.whatsapp, status: 'CONFIRMED', createdAt: reservation.createdAt, updatedAt: reservation.updatedAt };
     await assertFails(setDoc(doc(guest, 'publicReservations/BRU-FORGED-1234'), forged));
+  });
+
+  it('permite gerente cadastrar áreas e mesas válidas, mas bloqueia payloads inválidos', async () => {
+    const manager = env.authenticatedContext('manager').firestore();
+    const area = { id: 'area-sala-1234', name: 'Sala principal', active: true, displayOrder: 0 };
+    const table = { id: 'table-sala-1234', areaId: area.id, name: 'Mesa 01', capacity: 4, active: true, state: 'AVAILABLE' };
+    await assertSucceeds(setDoc(doc(manager, `areas/${area.id}`), area));
+    await assertSucceeds(setDoc(doc(manager, `tables/${table.id}`), table));
+    await assertFails(setDoc(doc(manager, 'areas/area-invalida'), { ...area, id: 'area-invalida', name: '', unexpected: true }));
+    await assertFails(setDoc(doc(manager, 'tables/table-invalida'), { ...table, id: 'table-invalida', capacity: 0 }));
+    await assertFails(setDoc(doc(manager, 'tables/table-id-divergente'), { ...table, id: 'outro-id' }));
   });
 
   it('permitem equipe ler e atualizar, mas bloqueiam exclusão para atendimento', async () => {

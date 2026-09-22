@@ -1,5 +1,5 @@
 import { areas as demoAreas, categories as demoCategories, content as demoContent, customers as demoCustomers, menuItems as demoMenuItems, moments as demoMoments, reservations as seedReservations, settings as demoSettings, tables as demoTables, team as demoTeam } from '@/lib/baru-data';
-import { collection, doc, getDoc, getDocs, query, runTransaction, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, where } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type Unsubscribe } from 'firebase/auth';
 import { firebaseAuth, firebaseDb, isFirebaseDataMode } from '@/lib/firebase-client';
 import type { Area, Customer, MenuCategory, MenuItem, PublicReservation, Reservation, RestaurantSettings, RestaurantTable, ServiceMoment, SiteContent, TeamMember } from '@/shared/baru-domain';
@@ -98,6 +98,39 @@ export async function readAreasAsync(): Promise<Area[]> { return readCollection<
 export async function readTablesAsync(): Promise<RestaurantTable[]> { return readCollection<RestaurantTable>('tables', demoTables); }
 export async function readCustomersAsync(): Promise<Customer[]> { return readCollection<Customer>('customers', demoCustomers); }
 export async function readTeamAsync(): Promise<TeamMember[]> { return readCollection<TeamMember>('users', demoTeam); }
+
+function documentSlug(value: string): string {
+  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'registro';
+}
+
+function requireOperationalFirebase(): NonNullable<typeof firebaseDb> {
+  if (!isFirebaseDataMode() || !firebaseDb) throw new Error('Este cadastro exige o Firebase real habilitado.');
+  return firebaseDb;
+}
+
+export async function createAreaAsync(input: Pick<Area, 'name' | 'displayOrder'>): Promise<Area> {
+  const db = requireOperationalFirebase();
+  const name = input.name.trim();
+  const displayOrder = Number(input.displayOrder);
+  if (name.length < 2 || name.length > 80) throw new Error('Informe um nome de área entre 2 e 80 caracteres.');
+  if (!Number.isInteger(displayOrder) || displayOrder < 0 || displayOrder > 999) throw new Error('A ordem da área deve ser um número inteiro entre 0 e 999.');
+  const area: Area = { id: `area-${documentSlug(name)}-${makeReservationIdentity().slice(0, 8)}`, name, active: true, displayOrder };
+  await setDoc(doc(db, 'areas', area.id), area);
+  return area;
+}
+
+export async function createTableAsync(input: Pick<RestaurantTable, 'areaId' | 'name' | 'capacity'>): Promise<RestaurantTable> {
+  const db = requireOperationalFirebase();
+  const areaId = input.areaId.trim();
+  const name = input.name.trim();
+  const capacity = Number(input.capacity);
+  if (!areaId) throw new Error('Selecione uma área para a mesa.');
+  if (name.length < 1 || name.length > 60) throw new Error('Informe um nome de mesa entre 1 e 60 caracteres.');
+  if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20) throw new Error('A capacidade deve ser um número inteiro entre 1 e 20.');
+  const table: RestaurantTable = { id: `table-${documentSlug(name)}-${makeReservationIdentity().slice(0, 8)}`, areaId, name, capacity, active: true, state: 'AVAILABLE' };
+  await setDoc(doc(db, 'tables', table.id), table);
+  return table;
+}
 
 export async function readSettingsAsync(): Promise<RestaurantSettings | null> {
   const db = firebaseDb;
