@@ -71,7 +71,7 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 - npm audit — 7 moderadas transitivas em ferramentas de desenvolvimento; npm audit fix atualizou firebase-tools para 15.30.2, e a remoção restante exigiria --force com downgrade incompatível.
 - npx firebase deploy --only firestore:rules,firestore:indexes --project restaurante-5665d — Rules compiladas e publicadas; índices publicados.
 - npx wrangler deploy --config wrangler.jsonc — Worker republicado.
-- Versão Worker verificada: 83399795-0abf-4f1d-a919-3c633e01d296, 100%.
+- Versão Worker verificada: 1fdc5209-6581-40e4-bb87-6382f19ecdb5, 100%.
 - Smoke HTTP remoto: /, /cardapio, /conta, /reservar, /admin/login, /admin e /admin/equipe responderam 200 com CSP; /admin/atendimento respondeu 404.
 - Smoke visual remoto no navegador: login com Firebase redirecionou para /admin e exibiu Administrador Baru; /conta exibiu acesso autenticado; /cardapio exibiu o canal oficial de pedidos; /admin/atendimento exibiu a página 404.
 - O modo Firebase exibiu “Conteúdo público aguardando cadastro” e “Cardápio oficial disponível” em vez de renderizar seeds fictícias.
@@ -85,4 +85,4 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 5. Configurar domínio próprio do Baru no Cloudflare.
 6. Trocar a senha inicial admin@gmail.com / admin123 antes de uso operacional.
 
-O commit de implementação será registrado no fechamento do Git desta rodada; o SHA publicado pode ser conferido com git rev-parse HEAD após o push.
+Commit de implementação auditado: 3d3fea3. O fechamento documental desta rodada será publicado em seguida; o SHA final pode ser conferido com git rev-parse HEAD.
