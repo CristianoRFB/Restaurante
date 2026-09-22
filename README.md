@@ -18,7 +18,7 @@ O endpoint `POST /api/orders` recalcula o preço no servidor a partir do catálo
 
 O endereço padrão do Worker ainda pertence ao namespace Cloudflare disponível nesta conta. O domínio próprio do Baru continua sendo uma configuração externa pendente.
 
-Estado auditado nesta rodada: **88% de maturidade**, com produção controlada. O núcleo de pedidos internos, catálogo CRUD, adicionais, caixa, finanças, promoções e configuração de zonas já está implementado em Firebase/Worker. QR de mesa, notificações completas, App Check, dados operacionais finais e QA concorrente ainda precisam ser fechados antes de declarar prontidão irrestrita.
+Estado auditado nesta rodada: **90% de maturidade**, com produção controlada. O núcleo de pedidos internos, catálogo CRUD, adicionais, caixa, finanças, promoções, disponibilidade por horário, notificações de novos pedidos e configuração de zonas já está implementado em Firebase/Worker. QR de mesa, App Check, dados operacionais finais e QA concorrente ainda precisam ser fechados antes de declarar prontidão irrestrita.
 
 ## Prints de referência e telas
 

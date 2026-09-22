@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs, onSnapshot, query, runTransaction, se
 import { firebaseAuth, firebaseDb, isFirebaseDataMode } from '@/lib/firebase-client';
 import { categories as demoCategories, menuItems as demoItems } from '@/lib/baru-data';
 import type { MenuCategory, MenuItem } from '@/shared/baru-domain';
-import { getOrderStatusMessage, ORDER_TRANSITIONS, type CartItemDraft, type OrderCatalog, type OrderModifier, type OrderModifierGroup, type OrderOperationsSettings, type OrderRecord, type OrderStatus, type PublicOrder } from '@/shared/order-domain';
+import { getOrderStatusMessage, ORDER_TRANSITIONS, type CartItemDraft, type OrderCatalog, type OrderModifier, type OrderModifierGroup, type OrderNotification, type OrderOperationsSettings, type OrderRecord, type OrderStatus, type PublicOrder } from '@/shared/order-domain';
 
 const CART_KEY = 'baru-order-cart-v1';
 export const defaultOrderSettings: OrderOperationsSettings = { acceptingOrders: true, pauseMessage: 'Os pedidos estão pausados no momento.', fulfillmentModes: ['PICKUP'], paymentMethods: ['PIX', 'CARD_ON_DELIVERY', 'CASH'], deliveryFeeCents: 0, minimumOrderCents: 0, orderEstimateMinutes: 30, deliveryZones: [] };
@@ -120,6 +120,17 @@ export async function readCustomerOrdersAsync(uid: string): Promise<OrderRecord[
 export function watchOrders(listener: (orders: OrderRecord[]) => void): Unsubscribe {
   if (!isFirebaseDataMode() || !firebaseDb) { listener([]); return () => undefined; }
   return onSnapshot(collection(firebaseDb, 'orders'), (snapshot) => listener(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as OrderRecord).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)))), () => listener([]));
+}
+
+export async function readOrderNotificationsAsync(): Promise<OrderNotification[]> {
+  if (!isFirebaseDataMode() || !firebaseDb) return [];
+  const snapshot = await getDocs(collection(firebaseDb, 'orderNotifications'));
+  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as OrderNotification).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt))).slice(0, 30);
+}
+
+export function watchOrderNotifications(listener: (notifications: OrderNotification[]) => void): Unsubscribe {
+  if (!isFirebaseDataMode() || !firebaseDb) { listener([]); return () => undefined; }
+  return onSnapshot(collection(firebaseDb, 'orderNotifications'), (snapshot) => listener(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as OrderNotification).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt))).slice(0, 30)), () => listener([]));
 }
 
 export async function updateOrderStatusAsync(orderId: string, nextStatus: OrderStatus): Promise<void> {

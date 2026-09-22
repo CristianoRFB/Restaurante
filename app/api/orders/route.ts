@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { z } from 'zod';
 import { calculateCartPreview, type CartItemDraft, type OrderCatalog, type OrderModifier, type OrderModifierGroup, type OrderStatus, type Promotion } from '@/shared/order-domain';
-import type { MenuItem } from '@/shared/baru-domain';
+import { getStoreAvailability, type RestaurantSettings, type MenuItem } from '@/shared/baru-domain';
 
 const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
 const database = `projects/${projectId}/databases/(default)`;
@@ -123,7 +123,10 @@ async function createOrder(payload: OrderPayload, customerAccountUid?: string): 
   }
   const existingRequest = await getDocument('orderRequests', payload.clientRequestId);
   if (existingRequest?.publicCode) { const existingPublic = await getDocument('publicOrders', String(existingRequest.publicCode)); if (existingPublic) return existingPublic; }
-  const [catalog, promotions] = await Promise.all([loadCatalog(), loadPromotions()]);
+  const [catalog, promotions, restaurantSettings] = await Promise.all([loadCatalog(), loadPromotions(), getDocument('restaurantSettings', 'main')]);
+  if (!restaurantSettings || typeof restaurantSettings.timezone !== 'string' || !restaurantSettings.openingHours) throw new Error('A configuração de funcionamento do restaurante ainda não foi publicada.');
+  const availability = getStoreAvailability(restaurantSettings as Pick<RestaurantSettings, 'openingHours' | 'timezone'>);
+  if (!availability.isOpen) throw new Error(`Os pedidos estão fechados agora. ${availability.nextOpeningLabel || 'Consulte o próximo horário de abertura.'}`);
   const preview = calculateCartPreview(payload.items as CartItemDraft[], catalog);
   const orderSettings = await getDocument('orderSettings', 'main') as { acceptingOrders?: boolean; fulfillmentModes?: string[]; paymentMethods?: string[]; deliveryFeeCents?: number; minimumOrderCents?: number; orderEstimateMinutes?: number; deliveryZones?: Array<{ id: string; name: string; feeCents: number; active: boolean }> } | null;
   if (orderSettings?.acceptingOrders === false) throw new Error('Os pedidos estão pausados no momento.');
@@ -143,8 +146,9 @@ async function createOrder(payload: OrderPayload, customerAccountUid?: string): 
   const now = new Date().toISOString(); const code = publicCode(); const orderId = `ord-${crypto.randomUUID()}`; const status: OrderStatus = 'NEW';
   const pricing = { subtotalCents: preview.subtotalCents, deliveryFeeCents, discountCents: appliedPromotion.discountCents, totalCents };
   const order = { id: orderId, publicCode: code, orderNumber: `#${code}`, ...(customerAccountUid ? { customerAccountUid } : {}), customer: { ...payload.customer, whatsapp: payload.customer.whatsapp.replace(/\D/g, '') }, items: preview.items, pricing, ...(appliedPromotion.promotion ? { promotion: appliedPromotion.promotion } : {}), fulfillment: payload.fulfillment, payment: payload.payment, notes: payload.notes || '', status, statusMessage: 'Pedido recebido. A loja vai confirmar em instantes.', estimatedMinutes: Number(orderSettings?.orderEstimateMinutes || 30), history: [{ status, label: 'Pedido recebido', at: now }], source: 'SITE', clientRequestId: payload.clientRequestId, createdAt: now, updatedAt: now };
+  const notification = { id: `new-${orderId}`, type: 'NEW_ORDER', orderId, orderNumber: order.orderNumber, publicCode: code, title: 'Novo pedido recebido', body: `${payload.customer.name} fez um pedido de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCents / 100)}.`, read: false, createdAt: now };
   const publicOrder = { publicCode: code, orderNumber: order.orderNumber, items: preview.items, pricing, ...(appliedPromotion.promotion ? { promotion: appliedPromotion.promotion } : {}), fulfillment: { mode: payload.fulfillment.mode }, payment: { method: payload.payment.method }, status, statusMessage: order.statusMessage, estimatedMinutes: order.estimatedMinutes, history: order.history, createdAt: now, updatedAt: now };
-  const commit = await firestoreRequest(':commit', { method: 'POST', body: JSON.stringify({ writes: [{ update: { name: resource('orders', orderId), fields: toFields(order) } }, { update: { name: resource('publicOrders', code), fields: toFields(publicOrder) } }, { update: { name: resource('orderRequests', payload.clientRequestId), fields: toFields({ clientRequestId: payload.clientRequestId, orderId, publicCode: code, createdAt: now }), currentDocument: { exists: false } } }] }) });
+  const commit = await firestoreRequest(':commit', { method: 'POST', body: JSON.stringify({ writes: [{ update: { name: resource('orders', orderId), fields: toFields(order) } }, { update: { name: resource('publicOrders', code), fields: toFields(publicOrder) } }, { update: { name: resource('orderNotifications', notification.id), fields: toFields(notification) } }, { update: { name: resource('orderRequests', payload.clientRequestId), fields: toFields({ clientRequestId: payload.clientRequestId, orderId, publicCode: code, createdAt: now }), currentDocument: { exists: false } } }] }) });
   if (!commit.ok) { const raced = await getDocument('orderRequests', payload.clientRequestId); if (raced?.publicCode) { const racedPublic = await getDocument('publicOrders', String(raced.publicCode)); if (racedPublic) return racedPublic; } throw new Error('Não foi possível confirmar o pedido. Tente novamente sem duplicar o envio.'); }
   return publicOrder;
 }
@@ -159,5 +163,5 @@ export async function POST(request: Request): Promise<Response> {
     try { decodedBody = JSON.parse(rawBody); } catch { return Response.json({ error: 'JSON do pedido inválido.' }, { status: 400 }); }
     const parsed = orderRequestSchema.safeParse(decodedBody); if (!parsed.success) return Response.json({ error: 'Dados do pedido inválidos.' }, { status: 400 });
     const result = await createOrder(parsed.data, await verifyCustomerToken(request)); return Response.json({ orderId: result.id, publicCode: result.publicCode, orderNumber: result.orderNumber, totalCents: (result.pricing as { totalCents: number }).totalCents }, { status: 201, headers: { 'cache-control': 'no-store' } });
-  } catch (error) { const message = error instanceof Error ? error.message : 'Não foi possível criar o pedido.'; const status = /inválid|indisponível|pausados|mínimo|troco|WhatsApp|endereço|duplicar|Cupom|cupom|zona|período/.test(message) ? 409 : 500; return Response.json({ error: message }, { status, headers: { 'cache-control': 'no-store' } }); }
+  } catch (error) { const message = error instanceof Error ? error.message : 'Não foi possível criar o pedido.'; const status = /inválid|indisponível|pausados|fechados|funcionamento|mínimo|troco|WhatsApp|endereço|duplicar|Cupom|cupom|zona|período|publicada/.test(message) ? 409 : 500; return Response.json({ error: message }, { status, headers: { 'cache-control': 'no-store' } }); }
 }

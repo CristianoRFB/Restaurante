@@ -134,6 +134,18 @@ export interface OrderRecord extends PublicOrder {
   clientRequestId: string;
 }
 
+export interface OrderNotification {
+  id: string;
+  type: 'NEW_ORDER';
+  orderId: string;
+  orderNumber: string;
+  publicCode: string;
+  title: string;
+  body: string;
+  read: boolean;
+  createdAt: unknown;
+}
+
 export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   NEW: ['CONFIRMED', 'CANCELLED'],
   CONFIRMED: ['PREPARING', 'CANCELLED'],

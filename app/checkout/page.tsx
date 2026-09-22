@@ -8,7 +8,7 @@ import { PublicLayout } from '@/components/public-shell';
 import { createClientRequestId, createOrderAsync, defaultOrderSettings, readOrderCatalogAsync, readOrderSettingsAsync } from '@/lib/order-repository';
 import { readSettingsAsync } from '@/lib/baru-repository';
 import { calculateCartPreview, formatOrderMoney, type FulfillmentMode, type OrderCatalog, type OrderOperationsSettings, type PaymentMethod } from '@/shared/order-domain';
-import type { RestaurantSettings } from '@/shared/baru-domain';
+import { getStoreAvailability, type RestaurantSettings } from '@/shared/baru-domain';
 
 const paymentLabels: Record<PaymentMethod, string> = { PIX: 'Pix', CARD_ON_DELIVERY: 'Cartão na entrega/retirada', CASH: 'Dinheiro' };
 const fulfillmentLabels: Record<FulfillmentMode, string> = { PICKUP: 'Retirar no Baru', DELIVERY: 'Receber em casa', DINE_IN: 'Consumir no local' };
@@ -37,6 +37,8 @@ export default function CheckoutPage() {
   const paymentMethods = orderSettings.paymentMethods;
   const activeZones = orderSettings.deliveryZones.filter((zone) => zone.active);
   const selectedZone = activeZones.find((zone) => zone.id === fields.zoneId);
+  const availability = settings ? getStoreAvailability(settings) : null;
+  const availabilityMessage = availability && !availability.isOpen ? `Os pedidos estão fechados agora. ${availability.nextOpeningLabel || ''}`.trim() : '';
   const preview = useMemo(() => {
     if (!catalog || !items.length) return null;
     try { return calculateCartPreview(items, catalog); } catch (caught) { setError(caught instanceof Error ? caught.message : 'Revise os itens do carrinho.'); return null; }
@@ -44,6 +46,7 @@ export default function CheckoutPage() {
   const deliveryFee = fulfillment === 'DELIVERY' ? Number(selectedZone?.feeCents ?? orderSettings.deliveryFeeCents ?? 0) : 0;
   const total = (preview?.subtotalCents || 0) + deliveryFee;
   const update = (key: keyof typeof fields, value: string) => setFields((current) => ({ ...current, [key]: value }));
+  useEffect(() => { if (availabilityMessage) setError(availabilityMessage); }, [availabilityMessage]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); if (!preview || submitting) return; setSubmitting(true); setError('');

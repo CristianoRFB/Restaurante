@@ -113,6 +113,17 @@ describe('Firestore rules do Baru', () => {
     await assertFails(deleteDoc(doc(service, 'reservations/res-test-1234')));
   });
 
+  it('permite equipe acompanhar notificações, mas bloqueia criação pública e alterações arbitrárias', async () => {
+    const notification = { id: 'new-order-test', type: 'NEW_ORDER', orderId: 'order-test', orderNumber: '#BRU-TEST', publicCode: 'BRU-TEST', title: 'Novo pedido recebido', body: 'Cliente fez um pedido.', read: false, createdAt: '2099-09-01T12:00:00.000Z' };
+    await env.withSecurityRulesDisabled(async (context) => { await setDoc(doc(context.firestore(), `orderNotifications/${notification.id}`), notification); });
+    const service = env.authenticatedContext('service').firestore();
+    const guest = env.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(service, `orderNotifications/${notification.id}`)));
+    await assertFails(setDoc(doc(guest, 'orderNotifications/forged'), notification));
+    await assertSucceeds(updateDoc(doc(service, `orderNotifications/${notification.id}`), { read: true }));
+    await assertFails(updateDoc(doc(guest, `orderNotifications/${notification.id}`), { read: false }));
+  });
+
   it('permitem admin excluir reserva', async () => {
     const admin = env.authenticatedContext('admin').firestore();
     await assertSucceeds(deleteDoc(doc(admin, 'reservations/res-test-1234')));

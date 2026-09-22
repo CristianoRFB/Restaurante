@@ -200,6 +200,69 @@ export function normalizeWhatsapp(value: string): string {
 
 const openingDayKeys: Array<keyof OpeningHours> = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
+export interface StoreAvailability {
+  isOpen: boolean;
+  todayLabel: string;
+  hoursLabel: string;
+  nextOpeningLabel?: string;
+}
+
+function clockMinutes(value: string): number | null {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
+  const [hour, minute] = value.split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+function zonedClock(date: Date, timeZone: string): { weekday: keyof OpeningHours; minutes: number } {
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date);
+  } catch {
+    parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date);
+  }
+  const weekdayMap: Record<string, keyof OpeningHours> = { sunday: 'sunday', monday: 'monday', tuesday: 'tuesday', wednesday: 'wednesday', thursday: 'thursday', friday: 'friday', saturday: 'saturday' };
+  const weekday = weekdayMap[parts.find((part) => part.type === 'weekday')?.value.toLowerCase() || 'sunday'];
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value || 0);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value || 0);
+  return { weekday, minutes: hour * 60 + minute };
+}
+
+function weekdayLabel(date: Date, timeZone: string): string {
+  try { return new Intl.DateTimeFormat('pt-BR', { timeZone, weekday: 'long' }).format(date); } catch { return new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long' }).format(date); }
+}
+
+function hoursLabel(value: OpeningHours[keyof OpeningHours] | undefined): string {
+  return !value || value.closed || !value.open || !value.close ? 'Fechado hoje' : `${value.open}–${value.close}`;
+}
+
+export function getStoreAvailability(settings: Pick<RestaurantSettings, 'openingHours' | 'timezone'>, now = new Date()): StoreAvailability {
+  const timeZone = settings.timezone || 'America/Sao_Paulo';
+  const current = zonedClock(now, timeZone);
+  const today = settings.openingHours?.[current.weekday];
+  const todayOpen = today ? clockMinutes(today.open) : null;
+  const todayClose = today ? clockMinutes(today.close) : null;
+  const isOpenToday = Boolean(today && !today.closed && todayOpen !== null && todayClose !== null && (todayClose > todayOpen ? current.minutes >= todayOpen && current.minutes < todayClose : current.minutes >= todayOpen));
+  const previous = zonedClock(new Date(now.getTime() - 24 * 60 * 60 * 1000), timeZone);
+  const previousHours = settings.openingHours?.[previous.weekday];
+  const previousOpen = previousHours ? clockMinutes(previousHours.open) : null;
+  const previousClose = previousHours ? clockMinutes(previousHours.close) : null;
+  const isOpenFromPreviousNight = Boolean(previousHours && !previousHours.closed && previousOpen !== null && previousClose !== null && previousClose <= previousOpen && current.minutes < previousClose);
+  if (isOpenToday || isOpenFromPreviousNight) {
+    return { isOpen: true, todayLabel: 'Aberto agora', hoursLabel: hoursLabel(today || previousHours) };
+  }
+  for (let offset = 0; offset <= 7; offset += 1) {
+    const candidateDate = new Date(now.getTime() + offset * 24 * 60 * 60 * 1000);
+    const candidate = zonedClock(candidateDate, timeZone);
+    const candidateHours = settings.openingHours?.[candidate.weekday];
+    const candidateOpen = candidateHours ? clockMinutes(candidateHours.open) : null;
+    if (!candidateHours || candidateHours.closed || candidateOpen === null) continue;
+    if (offset === 0 && candidateOpen <= current.minutes) continue;
+    const day = offset === 0 ? 'hoje' : weekdayLabel(candidateDate, timeZone);
+    return { isOpen: false, todayLabel: 'Fechado agora', hoursLabel: hoursLabel(today), nextOpeningLabel: `Próxima abertura ${day} às ${candidateHours.open}` };
+  }
+  return { isOpen: false, todayLabel: 'Fechado agora', hoursLabel: hoursLabel(today), nextOpeningLabel: 'Próxima abertura não configurada' };
+}
+
 export function openingHoursForDate(date: string, settings: RestaurantSettings): OpeningHours[keyof OpeningHours] | null {
   const parsed = new Date(`${date}T12:00:00`);
   if (Number.isNaN(parsed.getTime())) return null;
