@@ -50,6 +50,7 @@ npm run lint
 npm run typecheck
 npm test
 npm run test:rules
+npm run test:e2e
 npm run build
 ```
 
@@ -79,6 +80,7 @@ npx wrangler deploy --config wrangler.jsonc
 - `lib/customer-account.ts`: autenticação Firebase e perfil privado do cliente.
 - `shared/baru-domain.ts`: entidades, validações, status e formatação.
 - `firestore.rules`: autorização por papel, perfil de cliente e validações de dados.
+- `playwright.config.ts` e `tests/e2e/`: smoke E2E público contra o Worker publicado, incluindo viewport móvel e 404 do módulo removido.
 
 ## Documentação
 

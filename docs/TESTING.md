@@ -6,6 +6,7 @@
     npm run typecheck
     npm test
     npm run test:rules
+    npm run test:e2e
     npm run build
     npm run ci
     npm audit
@@ -21,4 +22,4 @@ Percorra:
 
 Repita em viewport móvel, teclado, zoom de 200%, refresh e duplo clique. Teste ID de reserva inexistente e confirme que nenhuma reserva seed é aberta. Teste também /admin/atendimento: a rota deve responder como inexistente, pois o módulo foi removido.
 
-E2E Playwright e testes adversariais completos ainda são trabalho pendente; a auditoria final deve registrar isso como risco.
+O smoke E2E Playwright cobre as rotas públicas essenciais, a abertura/fechamento do menu móvel e a inexistência de /admin/atendimento. A cobertura completa de todos os módulos administrativos, login autenticado e concorrência ainda é trabalho pendente.

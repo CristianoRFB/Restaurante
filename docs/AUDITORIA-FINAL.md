@@ -9,7 +9,7 @@ A base foi corrigida e republicada. O login administrativo real usa Firebase Aut
 
 O módulo fictício Atendimento/WhatsApp foi removido do código, da navegação, das Rules, dos índices e da documentação operacional. A referência visual 15 foi arquivada para não voltar a ser tratada como tela ativa. A rota publicada /admin/atendimento responde 404.
 
-Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honestamente declaradas: App Check não está ativado por falta da chave/domínio final, não há E2E Playwright versionado, há dependências moderadas transitivas apenas no firebase-tools de desenvolvimento, o conteúdo próprio ainda precisa de cadastro real e o namespace padrão do Worker ainda não é um domínio próprio do Baru.
+Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honestamente declaradas: App Check não está ativado por falta da chave/domínio final, o E2E Playwright ainda cobre apenas o smoke público, há dependências moderadas transitivas apenas no firebase-tools de desenvolvimento, o conteúdo próprio ainda precisa de cadastro real e o namespace padrão do Worker ainda não é um domínio próprio do Baru.
 
 ## Pontuação
 
@@ -17,7 +17,7 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 |---:|---|---:|---|
 | 1 | Funcionalidade | 8 | Home, cardápio, conta, reserva pública, confirmação, login Firebase e operação administrativa estão publicados; compra própria não é processada aqui, apenas no iFood oficial. |
 | 2 | UX desktop | 8 | Fluxos principais foram navegados no Worker publicado; a home em Firebase mostra estado vazio explícito quando o conteúdo real não está cadastrado. |
-| 3 | UX mobile | 7 | CSS e navegação móvel existem, mas não foi executado E2E em viewport móvel nesta rodada. |
+| 3 | UX mobile | 8 | Menu móvel foi implementado e validado em viewport 390x844 pelo E2E; falta ampliar a matriz de dispositivos. |
 | 4 | Fidelidade visual | 8 | As 19 referências ativas foram preservadas no índice e as telas mantêm a linguagem visual Baru; o conteúdo final e as fotos oficiais ainda dependem de cadastro. |
 | 5 | Responsividade | 8 | Breakpoints, tabelas com overflow, formulários e navegação inferior estão implementados; falta prova automatizada em múltiplos viewports. |
 | 6 | Acessibilidade | 7 | Labels, estados, textos alternativos e semântica básica existem; falta auditoria dedicada com leitor de tela e axe. |
@@ -32,7 +32,7 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 | 15 | Qualidade de código | 8 | Domínio, repository, autenticação e UI foram separados; alguns módulos JSX ainda são grandes e podem ser extraídos depois. |
 | 16 | Testes unitários | 8 | 7 testes unitários passam em 2 arquivos, cobrindo domínio e dados; faltam mais testes de componentes. |
 | 17 | Testes de integração | 8 | 6 testes de Firestore Rules passam, incluindo transação pública, PII, roles, isolamento e exclusões; ainda não há suíte completa contra projeto Firebase remoto. |
-| 18 | E2E | 3 | Não foi adicionada suíte Playwright versionada; smoke remoto manual via navegador e HTTP foi executado e registrado, mas não substitui E2E. |
+| 18 | E2E | 7 | Suíte Playwright versionada passa com 3 testes: rotas públicas, menu móvel e 404 de Atendimento; ainda não cobre todos os módulos admin nem sessão autenticada. |
 | 19 | Tratamento de erros | 7 | Loading, vazio, erro de repository, credencial inválida, conflito de mesa e reserva inexistente têm estados explícitos; faltam política de retry/offline e telemetria. |
 | 20 | Offline/degradação | 7 | Modo demo é explicitamente separado e Firebase sem dados não mostra seeds; não há estratégia offline operacional validada. |
 | 21 | Cloudflare | 8 | Worker foi republicado e está 100%; headers foram verificados e /admin/atendimento retornou 404; falta domínio próprio e observabilidade mais detalhada. |
@@ -57,6 +57,7 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 - Slots de reserva derivam de openingHours, timezone, lead time e duração nas configurações.
 - Modo Firebase inicia coleções sem seeds; conteúdo, cardápio, clientes, mesas, equipe e reservas vazios aparecem como estado real vazio.
 - Botões ainda não persistentes foram removidos ou desabilitados com explicação explícita; o botão de modo demo permanece identificado como demo.
+- Menu móvel público deixou de ser cenográfico e agora abre/fecha navegação real, com teste de viewport móvel.
 - CSP, X-Content-Type-Options, Referrer-Policy e Permissions-Policy foram adicionados.
 
 ## Evidências executadas
@@ -66,12 +67,13 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 - npm run typecheck — passou.
 - npm test — 2 arquivos, 7 testes passaram.
 - npm run test:rules — 1 arquivo, 6 testes passaram; emulador em 127.0.0.1:8180.
+- npm run test:e2e — 3 testes Playwright passaram contra o Worker publicado, com viewport móvel e rota removida.
 - npm run build — passou; rotas publicadas foram enumeradas pelo Vinext.
 - npm audit --omit=dev — 0 vulnerabilidades de produção.
 - npm audit — 7 moderadas transitivas em ferramentas de desenvolvimento; npm audit fix atualizou firebase-tools para 15.30.2, e a remoção restante exigiria --force com downgrade incompatível.
 - npx firebase deploy --only firestore:rules,firestore:indexes --project restaurante-5665d — Rules compiladas e publicadas; índices publicados.
 - npx wrangler deploy --config wrangler.jsonc — Worker republicado.
-- Versão Worker verificada: 1fdc5209-6581-40e4-bb87-6382f19ecdb5, 100%.
+- Versão Worker verificada: 1d5dd137-f630-4200-81ee-29110c540d57, 100%.
 - Smoke HTTP remoto: /, /cardapio, /conta, /reservar, /admin/login, /admin e /admin/equipe responderam 200 com CSP; /admin/atendimento respondeu 404.
 - Smoke visual remoto no navegador: login com Firebase redirecionou para /admin e exibiu Administrador Baru; /conta exibiu acesso autenticado; /cardapio exibiu o canal oficial de pedidos; /admin/atendimento exibiu a página 404.
 - O modo Firebase exibiu “Conteúdo público aguardando cadastro” e “Cardápio oficial disponível” em vez de renderizar seeds fictícias.
@@ -81,7 +83,7 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 1. Criar e cadastrar a chave do Firebase App Check para o domínio final.
 2. Configurar rate limiting/antiabuso e, idealmente, mover a criação pública para uma fronteira confiável server-side.
 3. Cadastrar conteúdo, categorias, itens, áreas e mesas reais no Firebase; não usar os seeds de demonstração como cardápio operacional.
-4. Adicionar Playwright E2E desktop/mobile para as rotas críticas e testes de concorrência.
+4. Expandir o Playwright E2E para todos os módulos administrativos, sessão autenticada e testes de concorrência.
 5. Configurar domínio próprio do Baru no Cloudflare.
 6. Trocar a senha inicial admin@gmail.com / admin123 antes de uso operacional.
 

@@ -1,15 +1,15 @@
 'use client';
 
 import { ArrowRight, Check, ChevronRight, CircleAlert, Copy, LoaderCircle } from 'lucide-react';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
 import { RESERVATION_STATUS_LABELS, reservationStatusTone, type ReservationStatus } from '@/shared/baru-domain';
 
 export function Button({ children, variant = 'primary', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'dark' }) {
   return <button className={`baru-button baru-button--${variant} ${className}`} {...props}>{children}</button>;
 }
 
-export function LinkButton({ children, href, variant = 'primary', className = '' }: { children: ReactNode; href: string; variant?: 'primary' | 'secondary' | 'ghost' | 'dark'; className?: string }) {
-  return <a className={`baru-button baru-button--${variant} ${className}`} href={href}>{children}</a>;
+export function LinkButton({ children, href, variant = 'primary', className = '', ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; href: string; variant?: 'primary' | 'secondary' | 'ghost' | 'dark' }) {
+  return <a className={`baru-button baru-button--${variant} ${className}`} href={href} {...props}>{children}</a>;
 }
 
 export function SectionHeading({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
