@@ -5,24 +5,24 @@ Escopo: auditoria e correção da base CristianoRFB/Restaurante, com foco em eli
 
 ## Resultado executivo
 
-A base foi corrigida e republicada. O login administrativo real usa Firebase Authentication, o perfil ADMIN é validado em users/{uid}, a área de cliente existe em /conta, reservas usam o repository Firebase quando NEXT_PUBLIC_DATA_MODE=firebase, e o cardápio público direciona compras para o canal oficial do Baru no iFood. O catálogo próprio permanece vazio até que itens reais sejam cadastrados; nenhum preço de seed é apresentado como operação real.
+A base foi corrigida e republicada. O login administrativo real usa Firebase Authentication, o perfil ADMIN é validado em users/{uid}, a área de cliente existe em /conta, reservas usam o repository Firebase quando NEXT_PUBLIC_DATA_MODE=firebase, e o cardápio público direciona compras para o canal oficial do Baru no iFood. O catálogo próprio foi cadastrado no Firebase a partir do menu oficial, com 23 categorias, 339 itens ativos, 3 agrupamentos de navegação e 3 destaques na home; nenhum preço de seed é apresentado como operação real.
 
 O módulo fictício Atendimento/WhatsApp foi removido do código, da navegação, das Rules, dos índices e da documentação operacional. A referência visual 15 foi arquivada para não voltar a ser tratada como tela ativa. A rota publicada /admin/atendimento responde 404.
 
-Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honestamente declaradas: App Check não está ativado por falta da chave/domínio final, o E2E Playwright ainda cobre apenas o smoke público, há dependências moderadas transitivas apenas no firebase-tools de desenvolvimento, o conteúdo próprio ainda precisa de cadastro real e o namespace padrão do Worker ainda não é um domínio próprio do Baru.
+Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honestamente declaradas: App Check não está ativado por falta da chave/domínio final, o E2E Playwright ainda cobre apenas o smoke público, há dependências moderadas transitivas apenas no firebase-tools de desenvolvimento, áreas/mesas ainda precisam de cadastro operacional e o namespace padrão do Worker ainda não é um domínio próprio do Baru.
 
 ## Pontuação
 
 | # | Área | Nota | Evidência e motivo |
 |---:|---|---:|---|
 | 1 | Funcionalidade | 8 | Home, cardápio, conta, reserva pública, confirmação, login Firebase e operação administrativa estão publicados; compra própria não é processada aqui, apenas no iFood oficial. |
-| 2 | UX desktop | 8 | Fluxos principais foram navegados no Worker publicado; a home em Firebase mostra estado vazio explícito quando o conteúdo real não está cadastrado. |
+| 2 | UX desktop | 8 | Fluxos principais foram navegados no Worker publicado; a home publicada exibe conteúdo e destaques derivados do cardápio real. |
 | 3 | UX mobile | 8 | Menu móvel foi implementado e validado em viewport 390x844 pelo E2E; falta ampliar a matriz de dispositivos. |
-| 4 | Fidelidade visual | 8 | As 19 referências ativas foram preservadas no índice e as telas mantêm a linguagem visual Baru; o conteúdo final e as fotos oficiais ainda dependem de cadastro. |
+| 4 | Fidelidade visual | 8 | As 19 referências ativas foram preservadas no índice, as telas mantêm a linguagem visual Baru e a home/cardápio usam imagens do catálogo oficial cadastrado. |
 | 5 | Responsividade | 8 | Breakpoints, tabelas com overflow, formulários e navegação inferior estão implementados; falta prova automatizada em múltiplos viewports. |
 | 6 | Acessibilidade | 7 | Labels, estados, textos alternativos e semântica básica existem; falta auditoria dedicada com leitor de tela e axe. |
 | 7 | Segurança | 8 | CSP, headers, Auth e Rules estritas foram publicados; App Check, rate limiting e monitoramento de abuso ainda não estão ativos. |
-| 8 | Firebase | 8 | Projeto real restaurante-5665d, Auth por e-mail/senha, perfil ADMIN, SDK sem fallback embutido e deploy de Rules/índices confirmados; conteúdo operacional ainda não foi populado. |
+| 8 | Firebase | 8 | Projeto real restaurante-5665d, Auth por e-mail/senha, perfil ADMIN, SDK sem fallback embutido e deploy de Rules/índices confirmados; conteúdo e catálogo real foram populados, faltando áreas/mesas. |
 | 9 | Regras Firestore | 8 | Schema público mínimo, isolamento de cliente, roles e teste de transação coerente passam; o write público de reserva ainda é uma superfície que merece endpoint confiável dedicado. |
 | 10 | Autorização | 8 | /admin/equipe exige ADMIN na UI e as Rules separam ADMIN/MANAGER/CASHIER/SERVICE; não há middleware server-side de rota, então a proteção de dados continua nas Rules. |
 | 11 | Integridade de dados | 8 | ID inexistente não cai em seed, idempotência retorna Reservation ou PublicReservation, confirmação pública é projeção mínima e updates são transacionais. |
@@ -36,10 +36,10 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 | 19 | Tratamento de erros | 7 | Loading, vazio, erro de repository, credencial inválida, conflito de mesa e reserva inexistente têm estados explícitos; faltam política de retry/offline e telemetria. |
 | 20 | Offline/degradação | 7 | Modo demo é explicitamente separado e Firebase sem dados não mostra seeds; não há estratégia offline operacional validada. |
 | 21 | Cloudflare | 8 | Worker foi republicado e está 100%; headers foram verificados e /admin/atendimento retornou 404; falta domínio próprio e observabilidade mais detalhada. |
-| 22 | Documentação | 8 | README, arquitetura, Firebase, segurança, testes, deploy, índice de rotas e esta auditoria foram atualizados; cadastro operacional real ainda precisa ser documentado quando ocorrer. |
+| 22 | Documentação | 8 | README, arquitetura, Firebase, segurança, testes, deploy, índice de rotas e esta auditoria registram o catálogo real cadastrado e suas limitações restantes. |
 | 23 | Limpeza de legado | 9 | Inbox, rota, tipos, coleção, regra e índice de conversations foram removidos; referência 15 está em arquivo e há somente menções históricas de 404 nos testes/deploy. |
-| 24 | Prontidão para demonstração | 8 | Login real, dashboard, conta de cliente, cardápio oficial e reserva pública são navegáveis; o conteúdo próprio vazio é intencional e sinalizado. |
-| 25 | Prontidão para produção | 6 | Ainda faltam App Check, antiabuso/rate limit, E2E, domínio próprio e cadastro real de conteúdo/cardápio/mesas; portanto não é honesto chamar de pronto para produção irrestrita. |
+| 24 | Prontidão para demonstração | 9 | Login real, dashboard, conta de cliente, conteúdo publicado, catálogo com 339 itens, canal oficial de compra e reserva pública são navegáveis. |
+| 25 | Prontidão para produção | 6 | Ainda faltam App Check, antiabuso/rate limit, E2E, domínio próprio e cadastro operacional de áreas/mesas; portanto não é honesto chamar de pronto para produção irrestrita. |
 
 ## Correções realizadas
 
@@ -55,7 +55,7 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 - Rules públicas limitam schema, origem, status, histórico, cliente convidado e vínculos da operação atômica; acesso de cliente e equipe foi isolado.
 - Locks de mesa impedem conflito de reservas confirmadas/chegadas e respeitam a duração configurada.
 - Slots de reserva derivam de openingHours, timezone, lead time e duração nas configurações.
-- Modo Firebase inicia coleções sem seeds; conteúdo, cardápio, clientes, mesas, equipe e reservas vazios aparecem como estado real vazio.
+- Modo Firebase inicia sem seeds fictícios; conteúdo, 23 categorias, 339 itens de cardápio e 3 momentos foram cadastrados a partir do menu oficial. Clientes, mesas e reservas continuam dependentes de operação real.
 - Botões ainda não persistentes foram removidos ou desabilitados com explicação explícita; o botão de modo demo permanece identificado como demo.
 - Menu móvel público deixou de ser cenográfico e agora abre/fecha navegação real, com teste de viewport móvel.
 - CSP, X-Content-Type-Options, Referrer-Policy e Permissions-Policy foram adicionados.
@@ -72,19 +72,20 @@ Esta rodada não recebe nota 10. Ainda existem riscos externos e lacunas honesta
 - npm audit --omit=dev — 0 vulnerabilidades de produção.
 - npm audit — 7 moderadas transitivas em ferramentas de desenvolvimento; npm audit fix atualizou firebase-tools para 15.30.2, e a remoção restante exigiria --force com downgrade incompatível.
 - npx firebase deploy --only firestore:rules,firestore:indexes --project restaurante-5665d — Rules compiladas e publicadas; índices publicados.
-- npx wrangler deploy --config wrangler.jsonc — Worker republicado.
-- Versão Worker verificada: 1d5dd137-f630-4200-81ee-29110c540d57, 100%.
+- npx wrangler deploy --config dist/server/wrangler.json — Worker republicado.
+- Versão Worker verificada: 433a4c0c-8201-49b1-adc0-b9d81af5c1a9, 100%.
 - Smoke HTTP remoto: /, /cardapio, /conta, /reservar, /admin/login, /admin e /admin/equipe responderam 200 com CSP; /admin/atendimento respondeu 404.
 - Smoke visual remoto no navegador: login com Firebase redirecionou para /admin e exibiu Administrador Baru; /conta exibiu acesso autenticado; /cardapio exibiu o canal oficial de pedidos; /admin/atendimento exibiu a página 404.
+- Após o cadastro real, nova verificação no Worker mostrou a home com “Sabores da nossa terra.”, três destaques e três momentos; `/cardapio` mostrou categorias, preços, imagens, busca e filtros do catálogo real.
 - O modo Firebase exibiu “Conteúdo público aguardando cadastro” e “Cardápio oficial disponível” em vez de renderizar seeds fictícias.
 
 ## Estado externo e próximos bloqueios
 
 1. Criar e cadastrar a chave do Firebase App Check para o domínio final.
 2. Configurar rate limiting/antiabuso e, idealmente, mover a criação pública para uma fronteira confiável server-side.
-3. Cadastrar conteúdo, categorias, itens, áreas e mesas reais no Firebase; não usar os seeds de demonstração como cardápio operacional.
+3. Cadastrar áreas e mesas reais no Firebase; o conteúdo e o catálogo oficial já foram cadastrados sem usar seeds de demonstração.
 4. Expandir o Playwright E2E para todos os módulos administrativos, sessão autenticada e testes de concorrência.
 5. Configurar domínio próprio do Baru no Cloudflare.
 6. Trocar a senha inicial admin@gmail.com / admin123 antes de uso operacional.
 
-Commit de implementação auditado: a9bf8a2. O fechamento documental desta rodada será publicado em seguida; o SHA final pode ser conferido com git rev-parse HEAD.
+Deploy desta rodada: Worker `433a4c0c-8201-49b1-adc0-b9d81af5c1a9`. O SHA final do repositório pode ser conferido com `git rev-parse HEAD`.

@@ -9,6 +9,8 @@ Produto web do Baru Gastronomia para presença pública, cardápio, pedidos onli
 - Pedido online: canal oficial do Baru no [iFood](https://www.ifood.com.br/delivery/ok-ok/ok/2f8d493e-c173-4669-899e-1483e9fffb12?UTM_Medium=share)
 - Cardápio oficial: [cardapio.barugastronomia.com.br](https://cardapio.barugastronomia.com.br/)
 
+O catálogo real publicado no Firebase foi cadastrado a partir do cardápio oficial: 23 categorias, 339 itens ativos, 3 agrupamentos de navegação e 3 destaques na home. Os preços, descrições e imagens exibidos em `/cardapio` vêm dessa carga real; o botão de compra continua levando ao iFood oficial para pagamento e acompanhamento do pedido.
+
 O endereço padrão do Worker ainda pertence ao namespace Cloudflare disponível nesta conta. O domínio próprio do Baru continua sendo uma configuração externa pendente.
 
 ## Prints de referência e telas
