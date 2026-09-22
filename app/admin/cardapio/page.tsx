@@ -1,2 +1,2 @@
-import { MenuManagerView } from '@/components/admin-modules';
-export default function AdminMenuPage() { return <MenuManagerView />; }
+import { CatalogManagerView } from '@/components/admin-catalog';
+export default function AdminMenuPage() { return <CatalogManagerView />; }

@@ -118,6 +118,90 @@ function requireOperationalFirebase(): NonNullable<typeof firebaseDb> {
   return firebaseDb;
 }
 
+const openingHourKeys: Array<keyof RestaurantSettings['openingHours']> = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+function requireText(value: string, label: string, min: number, max: number): string {
+  const normalized = value.trim();
+  if (normalized.length < min || normalized.length > max) throw new Error(`${label} deve ter entre ${min} e ${max} caracteres.`);
+  return normalized;
+}
+
+function requireUrl(value: string, label: string, max = 2048): string {
+  const normalized = value.trim();
+  if (!normalized || normalized.length > max) throw new Error(`${label} deve ser uma URL válida.`);
+  try {
+    const parsed = new URL(normalized);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('unsupported protocol');
+  } catch {
+    throw new Error(`${label} deve ser uma URL válida.`);
+  }
+  return normalized;
+}
+
+function validateSettingsForWrite(value: RestaurantSettings): RestaurantSettings {
+  const maxPartySize = Number(value.maxPartySize);
+  const reservationLeadHours = Number(value.reservationLeadHours);
+  const reservationDurationMinutes = Number(value.reservationDurationMinutes);
+  if (!Number.isInteger(maxPartySize) || maxPartySize < 1 || maxPartySize > 20) throw new Error('A capacidade máxima deve ser um inteiro entre 1 e 20.');
+  if (!Number.isInteger(reservationLeadHours) || reservationLeadHours < 0 || reservationLeadHours > 168) throw new Error('A antecedência deve ser um inteiro entre 0 e 168 horas.');
+  if (!Number.isInteger(reservationDurationMinutes) || reservationDurationMinutes < 30 || reservationDurationMinutes > 480) throw new Error('A duração deve ser um inteiro entre 30 e 480 minutos.');
+  if (!['MANUAL', 'AUTOMATIC'].includes(value.confirmationMode)) throw new Error('O modo de confirmação é inválido.');
+  const openingHours = Object.fromEntries(openingHourKeys.map((key) => {
+    const day = value.openingHours[key];
+    if (!day || typeof day.closed !== 'boolean') throw new Error(`O horário de ${key} é inválido.`);
+    if (!day.closed && !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(day.open)) throw new Error(`O horário de abertura de ${key} é inválido.`);
+    if (!day.closed && !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(day.close)) throw new Error(`O horário de fechamento de ${key} é inválido.`);
+    return [key, { open: day.closed ? '' : day.open, close: day.closed ? '' : day.close, closed: day.closed }];
+  })) as unknown as RestaurantSettings['openingHours'];
+  const whatsapp = value.whatsapp.trim().replace(/\D/g, '');
+  if (!/^[0-9]{10,15}$/.test(whatsapp)) throw new Error('O WhatsApp deve conter entre 10 e 15 dígitos.');
+  return {
+    name: requireText(value.name, 'O nome', 2, 120),
+    tagline: requireText(value.tagline, 'A frase', 2, 240),
+    city: requireText(value.city, 'A cidade', 2, 120),
+    address: requireText(value.address, 'O endereço', 5, 240),
+    whatsapp,
+    timezone: requireText(value.timezone, 'O fuso horário', 3, 80),
+    maxPartySize,
+    reservationLeadHours,
+    reservationDurationMinutes,
+    confirmationMode: value.confirmationMode,
+    officialMenuUrl: requireUrl(value.officialMenuUrl, 'O link oficial do cardápio'),
+    onlineOrderingUrl: requireUrl(value.onlineOrderingUrl, 'O link de pedidos'),
+    openingHours,
+    demoMode: Boolean(value.demoMode),
+  };
+}
+
+function validateContentForWrite(value: SiteContent): SiteContent {
+  if (!Array.isArray(value.gallery) || value.gallery.length < 1 || value.gallery.length > 12) throw new Error('A galeria deve ter entre 1 e 12 imagens.');
+  const gallery = value.gallery.map((item) => requireUrl(item, 'Cada imagem da galeria'));
+  return {
+    heroTitle: requireText(value.heroTitle, 'O título principal', 2, 240),
+    heroSubtitle: requireText(value.heroSubtitle, 'O subtítulo', 2, 500),
+    heroImageUrl: requireUrl(value.heroImageUrl, 'A imagem principal'),
+    chefName: requireText(value.chefName, 'O nome do chef', 2, 120),
+    chefBio: requireText(value.chefBio, 'A biografia do chef', 2, 1000),
+    chefImageUrl: requireUrl(value.chefImageUrl, 'A imagem do chef'),
+    quote: requireText(value.quote, 'A frase de destaque', 2, 500),
+    gallery,
+  };
+}
+
+export async function saveSettingsAsync(value: RestaurantSettings): Promise<RestaurantSettings> {
+  const db = requireOperationalFirebase();
+  const next = validateSettingsForWrite(value);
+  await setDoc(doc(db, 'restaurantSettings', 'main'), next);
+  return next;
+}
+
+export async function saveContentAsync(value: SiteContent): Promise<SiteContent> {
+  const db = requireOperationalFirebase();
+  const next = validateContentForWrite(value);
+  await setDoc(doc(db, 'siteContent', 'main'), next);
+  return next;
+}
+
 export async function createAreaAsync(input: Pick<Area, 'name' | 'displayOrder'>): Promise<Area> {
   const db = requireOperationalFirebase();
   const name = input.name.trim();

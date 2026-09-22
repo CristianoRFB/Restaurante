@@ -8,7 +8,9 @@ test('rotas públicas essenciais permanecem navegáveis', async ({ page }) => {
   const cardapioResponse = await page.goto('/cardapio');
   expect(cardapioResponse?.headers()['content-security-policy']).toContain('https://storage.googleapis.com');
   await expect(page.getByRole('heading', { name: 'Cardápio', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Pedir no iFood/i }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Monte seu pedido/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /carrinho/i }).first()).toBeVisible();
+  await expect(page.getByText(/Pedir no iFood/i)).toHaveCount(0);
 
   await page.goto('/conta');
   await expect(page.getByRole('heading', { name: 'Minha conta', exact: true })).toBeVisible();

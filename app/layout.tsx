@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { OrderProvider } from '@/components/order-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -10,5 +11,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#283321' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="pt-BR"><body>{children}</body></html>;
+  return <html lang="pt-BR"><body><OrderProvider>{children}</OrderProvider></body></html>;
 }

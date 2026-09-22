@@ -70,8 +70,115 @@ service cloud.firestore {
         && data.createdAt is string && data.updatedAt is string
         && (!data.keys().hasAny(['whatsapp']) || (data.whatsapp is string && data.whatsapp.matches('^[0-9]{10,15}$')));
     }
-
-    match /restaurantSettings/{id} { allow read: if true; allow write: if isAdmin(); }
+    function validOpeningDay(day) {
+      return day.keys().hasOnly(['open', 'close', 'closed'])
+        && day.open is string && day.close is string && day.closed is bool
+        && (day.closed || (day.open.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$') && day.close.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')));
+    }
+    function validOpeningHours(hours) {
+      return hours.keys().hasOnly(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])
+        && validOpeningDay(hours.monday)
+        && validOpeningDay(hours.tuesday)
+        && validOpeningDay(hours.wednesday)
+        && validOpeningDay(hours.thursday)
+        && validOpeningDay(hours.friday)
+        && validOpeningDay(hours.saturday)
+        && validOpeningDay(hours.sunday);
+    }
+    function validSettings(data) {
+      return data.keys().hasOnly(['name', 'tagline', 'city', 'address', 'whatsapp', 'timezone', 'maxPartySize', 'reservationLeadHours', 'reservationDurationMinutes', 'confirmationMode', 'officialMenuUrl', 'onlineOrderingUrl', 'openingHours', 'demoMode'])
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.tagline is string && data.tagline.size() >= 2 && data.tagline.size() <= 240
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 120
+        && data.address is string && data.address.size() >= 5 && data.address.size() <= 240
+        && data.whatsapp is string && data.whatsapp.matches('^[0-9]{10,15}$')
+        && data.timezone is string && data.timezone.size() >= 3 && data.timezone.size() <= 80
+        && data.maxPartySize is int && data.maxPartySize >= 1 && data.maxPartySize <= 20
+        && data.reservationLeadHours is int && data.reservationLeadHours >= 0 && data.reservationLeadHours <= 168
+        && data.reservationDurationMinutes is int && data.reservationDurationMinutes >= 30 && data.reservationDurationMinutes <= 480
+        && data.confirmationMode in ['MANUAL', 'AUTOMATIC']
+        && data.officialMenuUrl is string && data.officialMenuUrl.size() >= 1 && data.officialMenuUrl.size() <= 2048
+        && data.onlineOrderingUrl is string && data.onlineOrderingUrl.size() >= 1 && data.onlineOrderingUrl.size() <= 2048
+        && data.openingHours is map && validOpeningHours(data.openingHours)
+        && data.demoMode is bool;
+    }
+    function validSiteContent(data) {
+      return data.keys().hasOnly(['heroTitle', 'heroSubtitle', 'heroImageUrl', 'chefName', 'chefBio', 'chefImageUrl', 'quote', 'gallery'])
+        && data.heroTitle is string && data.heroTitle.size() >= 2 && data.heroTitle.size() <= 240
+        && data.heroSubtitle is string && data.heroSubtitle.size() >= 2 && data.heroSubtitle.size() <= 500
+        && data.heroImageUrl is string && data.heroImageUrl.size() >= 1 && data.heroImageUrl.size() <= 2048
+        && data.chefName is string && data.chefName.size() >= 2 && data.chefName.size() <= 120
+        && data.chefBio is string && data.chefBio.size() >= 2 && data.chefBio.size() <= 1000
+        && data.chefImageUrl is string && data.chefImageUrl.size() >= 1 && data.chefImageUrl.size() <= 2048
+        && data.quote is string && data.quote.size() >= 2 && data.quote.size() <= 500
+        && data.gallery is list && data.gallery.size() >= 1 && data.gallery.size() <= 12;
+    }
+    function validPromotion(data) {
+      return data.keys().hasOnly(['id', 'code', 'title', 'description', 'discountType', 'discountValue', 'minOrderCents', 'active', 'startsAt', 'endsAt', 'displayOrder'])
+        && data.id is string && data.id.size() >= 3 && data.id.size() <= 120
+        && data.code is string && data.code.matches('^[A-Z0-9_-]{3,40}$')
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 120
+        && data.description is string && data.description.size() >= 2 && data.description.size() <= 500
+        && data.discountType in ['PERCENT', 'FIXED']
+        && data.discountValue is int && data.discountValue >= 1
+        && (data.discountType == 'PERCENT' ? data.discountValue <= 100 : data.discountValue <= 10000000)
+        && data.minOrderCents is int && data.minOrderCents >= 0 && data.minOrderCents <= 10000000
+        && data.active is bool
+        && data.displayOrder is int && data.displayOrder >= 0 && data.displayOrder <= 9999
+        && (!data.keys().hasAny(['startsAt']) || data.startsAt is string)
+        && (!data.keys().hasAny(['endsAt']) || data.endsAt is string);
+    }
+    function validCashRegister(data) {
+      return data.keys().hasOnly(['id', 'status', 'operatorUid', 'operatorEmail', 'openedAt', 'closedAt', 'openingDate', 'initialBalanceCents', 'expectedCashCents', 'countedCashCents', 'differenceCents', 'closingNote', 'updatedAt'])
+        && data.id is string && data.id.size() >= 3 && data.id.size() <= 120
+        && data.status in ['OPEN', 'CLOSED']
+        && data.operatorUid is string && data.operatorUid == request.auth.uid
+        && data.openedAt is string
+        && data.openingDate is string && data.openingDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.initialBalanceCents is int && data.initialBalanceCents >= 0 && data.initialBalanceCents <= 100000000
+        && (!data.keys().hasAny(['operatorEmail']) || data.operatorEmail is string)
+        && (!data.keys().hasAny(['closedAt']) || data.closedAt is string)
+        && (!data.keys().hasAny(['expectedCashCents']) || data.expectedCashCents is int)
+        && (!data.keys().hasAny(['countedCashCents']) || data.countedCashCents is int)
+        && (!data.keys().hasAny(['differenceCents']) || data.differenceCents is int)
+        && (!data.keys().hasAny(['closingNote']) || data.closingNote is string)
+        && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is string);
+    }
+    function validCashMovement(data) {
+      return data.keys().hasOnly(['id', 'registerId', 'type', 'direction', 'amountCents', 'cashAmountCents', 'paymentMethod', 'orderNumber', 'sourceOrderId', 'operatorUid', 'operatorEmail', 'note', 'createdAt'])
+        && data.id is string && data.id.size() >= 3 && data.id.size() <= 120
+        && data.registerId is string && data.registerId.size() >= 3 && data.registerId.size() <= 120
+        && data.type in ['SALE', 'WITHDRAWAL', 'SUPPLY', 'REFUND']
+        && data.direction in ['IN', 'OUT']
+        && data.amountCents is int && data.amountCents > 0 && data.amountCents <= 100000000
+        && data.cashAmountCents is int && data.cashAmountCents >= 0 && data.cashAmountCents <= 100000000
+        && data.operatorUid is string && data.operatorUid == request.auth.uid
+        && data.createdAt is string
+        && (!data.keys().hasAny(['paymentMethod']) || data.paymentMethod in ['PIX', 'CARD', 'CASH', 'OTHER'])
+        && (!data.keys().hasAny(['orderNumber']) || data.orderNumber is string)
+        && (!data.keys().hasAny(['sourceOrderId']) || data.sourceOrderId is string)
+        && (!data.keys().hasAny(['operatorEmail']) || data.operatorEmail is string)
+        && (!data.keys().hasAny(['note']) || data.note is string);
+    }
+    function validFinanceEntry(data) {
+      return data.keys().hasOnly(['id', 'kind', 'category', 'amountCents', 'date', 'description', 'status', 'orderNumber', 'sourceOrderId', 'notes', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() >= 3 && data.id.size() <= 120
+        && data.kind in ['INCOME', 'EXPENSE']
+        && data.category is string && data.category.size() >= 2 && data.category.size() <= 80
+        && data.amountCents is int && data.amountCents > 0 && data.amountCents <= 100000000
+        && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.description is string && data.description.size() >= 2 && data.description.size() <= 240
+        && data.status in ['PAID', 'PENDING']
+        && (!data.keys().hasAny(['orderNumber']) || data.orderNumber is string)
+        && (!data.keys().hasAny(['sourceOrderId']) || data.sourceOrderId is string)
+        && (!data.keys().hasAny(['notes']) || data.notes is string)
+        && data.createdAt is string && data.updatedAt is string;
+    }
+    match /restaurantSettings/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && id == 'main' && validSettings(request.resource.data);
+      allow delete: if false;
+    }
     match /serviceMoments/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update, delete: if isAdmin() && validMoment(request.resource.data); }
     match /menuCategories/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update, delete: if isManager(); }
     match /menuItems/{id} { allow read: if resource.data.active == true || isStaff(); allow create, update: if isManager() && validMenuItem(request.resource.data); allow delete: if isAdmin(); }
@@ -118,7 +225,74 @@ service cloud.firestore {
         && request.resource.data.createdAt is string;
       allow delete: if isManager();
     }
-    match /siteContent/{id} { allow read: if true; allow write: if isManager(); }
+    match /siteContent/{id} {
+      allow read: if true;
+      allow create, update: if isManager() && id == 'main' && validSiteContent(request.resource.data);
+      allow delete: if isAdmin();
+    }
+    match /modifierGroups/{id} {
+      allow read: if resource.data.active == true || isStaff();
+      allow write: if isManager();
+    }
+    match /modifiers/{id} {
+      allow read: if resource.data.active == true || isStaff();
+      allow write: if isManager();
+    }
+    match /orders/{id} {
+      allow get: if isStaff() || (signedIn() && resource.data.customerAccountUid == request.auth.uid);
+      allow list: if isStaff() || (signedIn() && resource.data.customerAccountUid == request.auth.uid);
+      allow create: if false;
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+    match /publicOrders/{code} {
+      allow get: if resource.data.publicCode == code;
+      allow list: if false;
+      allow write: if false;
+    }
+    match /orderRequests/{id} {
+      allow read, write: if false;
+    }
+    match /orderNotifications/{id} {
+      allow read: if isStaff();
+      allow write: if isManager();
+    }
+    match /orderSettings/{id} {
+      allow read: if true;
+      allow create, update: if isManager()
+        && id == 'main'
+        && request.resource.data.keys().hasOnly(['acceptingOrders', 'pauseMessage', 'fulfillmentModes', 'paymentMethods', 'deliveryFeeCents', 'minimumOrderCents', 'orderEstimateMinutes', 'deliveryZones'])
+        && request.resource.data.acceptingOrders is bool
+        && request.resource.data.pauseMessage is string && request.resource.data.pauseMessage.size() <= 240
+        && request.resource.data.fulfillmentModes is list && request.resource.data.fulfillmentModes.size() >= 1 && request.resource.data.fulfillmentModes.size() <= 3
+        && request.resource.data.paymentMethods is list && request.resource.data.paymentMethods.size() >= 1 && request.resource.data.paymentMethods.size() <= 3
+        && request.resource.data.deliveryFeeCents is int && request.resource.data.deliveryFeeCents >= 0 && request.resource.data.deliveryFeeCents <= 1000000
+        && request.resource.data.minimumOrderCents is int && request.resource.data.minimumOrderCents >= 0 && request.resource.data.minimumOrderCents <= 10000000
+        && request.resource.data.orderEstimateMinutes is int && request.resource.data.orderEstimateMinutes >= 5 && request.resource.data.orderEstimateMinutes <= 240
+        && request.resource.data.deliveryZones is list && request.resource.data.deliveryZones.size() <= 30;
+      allow delete: if false;
+    }
+    match /promotions/{id} {
+      allow read: if isStaff();
+      allow create, update: if isManager() && id == request.resource.data.id && validPromotion(request.resource.data);
+      allow delete: if isAdmin();
+    }
+    match /cashRegisters/{id} {
+      allow read: if isStaff();
+      allow create, update: if isStaff() && id == request.resource.data.id && validCashRegister(request.resource.data);
+      allow delete: if isManager();
+    }
+    match /cashMovements/{id} {
+      allow read: if isStaff();
+      allow create: if isStaff() && id == request.resource.data.id && validCashMovement(request.resource.data);
+      allow update: if false;
+      allow delete: if isManager();
+    }
+    match /financeEntries/{id} {
+      allow read: if isStaff();
+      allow create, update: if isStaff() && id == request.resource.data.id && validFinanceEntry(request.resource.data);
+      allow delete: if isManager();
+    }
     match /customerAccounts/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
       allow list: if false;

@@ -16,7 +16,7 @@
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts --exclude tests/firestore.rules.test.ts",
-    "test:domain": "vitest run --config vitest.config.ts tests/baru-domain.test.ts tests/baru-data.test.ts",
+    "test:domain": "vitest run --config vitest.config.ts tests/baru-domain.test.ts tests/baru-data.test.ts tests/order-domain.test.ts",
     "test:rules": "node scripts/test-rules.mjs",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test tests/e2e/admin.spec.ts",

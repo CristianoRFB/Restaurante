@@ -2,10 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc, where } from 'firebase/firestore';
 
 let env: RulesTestEnvironment;
 const reservation = { id: 'res-test-1234', code: 'BRU-TEST-1234', date: '2099-09-24', time: '19:30', partySize: 2, customerId: 'guest', customerName: 'Ana Clara', whatsapp: '5545999887766', note: '', status: 'NEW', source: 'SITE', history: [{ id: 'history-1', status: 'NEW', label: 'Reserva criada', createdAt: '2099-09-01T12:00:00.000Z', by: 'Site' }], createdAt: '2099-09-01T12:00:00.000Z', updatedAt: '2099-09-01T12:00:00.000Z', idempotencyKey: 'request-test-1234567890' };
+const settingsDocument = { name: 'Baru Gastronomia', tagline: 'Boa comida aproxima pessoas.', city: 'Foz do Iguaçu · PR', address: 'Av. Paraná, 3515 · Jardim Central', whatsapp: '5545991125003', timezone: 'America/Sao_Paulo', maxPartySize: 20, reservationLeadHours: 2, reservationDurationMinutes: 120, confirmationMode: 'MANUAL', officialMenuUrl: 'https://cardapio.example.com', onlineOrderingUrl: 'https://pedidos.example.com', openingHours: { monday: { open: '12:00', close: '23:00', closed: false }, tuesday: { open: '12:00', close: '23:00', closed: false }, wednesday: { open: '12:00', close: '23:00', closed: false }, thursday: { open: '12:00', close: '23:00', closed: false }, friday: { open: '12:00', close: '23:00', closed: false }, saturday: { open: '12:00', close: '23:00', closed: false }, sunday: { open: '', close: '', closed: true } }, demoMode: false };
+const contentDocument = { heroTitle: 'Uma mesa para chamar de sua', heroSubtitle: 'Cozinha autoral, ingredientes brasileiros e encontros memoráveis.', heroImageUrl: 'https://images.example.com/hero.jpg', chefName: 'Chef Baru', chefBio: 'Uma cozinha de território e afeto.', chefImageUrl: 'https://images.example.com/chef.jpg', quote: 'Comida boa é aquela que reúne.', gallery: ['https://images.example.com/1.jpg'] };
 
 beforeAll(async () => {
   const emulator = process.env.FIRESTORE_EMULATOR_HOST?.split(':') ?? ['127.0.0.1', '8180'];
@@ -64,6 +66,44 @@ describe('Firestore rules do Baru', () => {
     await assertFails(setDoc(doc(admin, 'reservations/res-test-1234'), { ...reservation, id: 'res-outro-id' }));
     await assertFails(setDoc(doc(admin, 'publicReservations/BRU-OUTRO-1234'), { id: 'res-public-1234', code: 'BRU-TEST-1234', date: reservation.date, time: reservation.time, partySize: 2, customerName: reservation.customerName, whatsappLast4: '7766', status: 'NEW', createdAt: reservation.createdAt, updatedAt: reservation.updatedAt }));
     await assertFails(setDoc(doc(admin, 'reservationRequests/request-path-1234'), { idempotencyKey: 'different-request-1234', reservationId: reservation.id, code: reservation.code, createdAt: reservation.createdAt }));
+  });
+
+  it('permite persistir configurações e conteúdo válidos, mas rejeita payloads fora do contrato', async () => {
+    const admin = env.authenticatedContext('admin').firestore();
+    const manager = env.authenticatedContext('manager').firestore();
+    await assertSucceeds(setDoc(doc(admin, 'restaurantSettings/main'), settingsDocument));
+    await assertSucceeds(setDoc(doc(manager, 'siteContent/main'), contentDocument));
+    await assertFails(setDoc(doc(admin, 'restaurantSettings/other'), settingsDocument));
+    await assertFails(setDoc(doc(admin, 'restaurantSettings/main'), { ...settingsDocument, maxPartySize: 0 }));
+    await assertFails(setDoc(doc(manager, 'siteContent/main'), { ...contentDocument, gallery: [] }));
+    await assertFails(setDoc(doc(env.authenticatedContext('service').firestore(), 'siteContent/main'), contentDocument));
+  });
+
+  it('protege a configuração operacional de pedidos e permite somente gestão', async () => {
+    const manager = env.authenticatedContext('manager').firestore();
+    const service = env.authenticatedContext('service').firestore();
+    const orderSettings = { acceptingOrders: true, pauseMessage: 'Pedidos pausados temporariamente.', fulfillmentModes: ['PICKUP'], paymentMethods: ['PIX', 'CARD_ON_DELIVERY', 'CASH'], deliveryFeeCents: 0, minimumOrderCents: 0, orderEstimateMinutes: 30, deliveryZones: [] };
+    await assertSucceeds(setDoc(doc(manager, 'orderSettings/main'), orderSettings));
+    await assertFails(setDoc(doc(manager, 'orderSettings/outro'), orderSettings));
+    await assertFails(setDoc(doc(manager, 'orderSettings/main'), { ...orderSettings, orderEstimateMinutes: 0 }));
+    await assertFails(setDoc(doc(service, 'orderSettings/main'), orderSettings));
+  });
+
+  it('isola pedidos privados por conta e permite promoção válida somente à gestão', async () => {
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'orders/order-customer-1'), { id: 'order-customer-1', customerAccountUid: 'customer', status: 'NEW' });
+    });
+    const customer = env.authenticatedContext('customer', { email: 'cliente@example.com' }).firestore();
+    const other = env.authenticatedContext('other', { email: 'outro@example.com' }).firestore();
+    await assertSucceeds(getDoc(doc(customer, 'orders/order-customer-1')));
+    await assertFails(getDoc(doc(other, 'orders/order-customer-1')));
+    await assertSucceeds(getDocs(query(collection(customer, 'orders'), where('customerAccountUid', '==', 'customer'))));
+    await assertFails(getDocs(query(collection(other, 'orders'), where('customerAccountUid', '==', 'customer'))));
+    const manager = env.authenticatedContext('manager').firestore();
+    const promotion = { id: 'promo-bemvindo10', code: 'BEMVINDO10', title: 'Boas-vindas', description: 'Desconto para o primeiro pedido.', discountType: 'PERCENT', discountValue: 10, minOrderCents: 0, active: true, displayOrder: 0 };
+    await assertSucceeds(setDoc(doc(manager, 'promotions/promo-bemvindo10'), promotion));
+    await assertFails(setDoc(doc(customer, 'promotions/promo-customer'), promotion));
+    await assertFails(setDoc(doc(manager, 'promotions/promo-bad'), { ...promotion, id: 'promo-bad', discountValue: 101 }));
   });
 
   it('permitem equipe ler e atualizar, mas bloqueiam exclusão para atendimento', async () => {

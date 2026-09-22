@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, ChartNoAxesCombined, ClipboardList, Home, Settings, ShieldCheck, Store, Users, Utensils, LayoutGrid, LogOut, BookOpen } from 'lucide-react';
+import { CalendarDays, ChartNoAxesCombined, ClipboardList, Home, Settings, ShieldCheck, ShoppingBag, Store, Users, Utensils, LayoutGrid, LogOut, BookOpen, WalletCards, BadgePercent, CircleDollarSign, SlidersHorizontal } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { readSession, signOutAdmin, watchAdminSession, type AdminSession } from '@/lib/baru-repository';
@@ -9,18 +9,24 @@ import { isFirebaseDataMode } from '@/lib/firebase-client';
 const links = [
   { href: '/admin', label: 'Início', icon: Home },
   { href: '/admin/reservas', label: 'Reservas', icon: CalendarDays },
+  { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
   { href: '/admin/agenda', label: 'Agenda', icon: ClipboardList },
   { href: '/admin/clientes', label: 'Clientes', icon: Users },
   { href: '/admin/cardapio', label: 'Cardápio', icon: Utensils },
+  { href: '/admin/adicionais', label: 'Adicionais', icon: SlidersHorizontal },
+  { href: '/admin/promocoes', label: 'Promoções', icon: BadgePercent },
   { href: '/admin/mesas', label: 'Mesas e áreas', icon: LayoutGrid },
+  { href: '/admin/caixa', label: 'Caixa', icon: WalletCards },
+  { href: '/admin/financas', label: 'Finanças', icon: CircleDollarSign },
   { href: '/admin/equipe', label: 'Equipe', icon: ShieldCheck },
   { href: '/admin/relatorios', label: 'Relatórios', icon: ChartNoAxesCombined },
   { href: '/admin/conteudo', label: 'Conteúdo', icon: BookOpen },
   { href: '/admin/configuracoes', label: 'Configurações', icon: Settings },
+  { href: '/admin/configuracoes/pedidos', label: 'Config. pedidos', icon: ShoppingBag },
 ];
 
 function isActive(path: string, href: string) { return href === '/admin' ? path === href : path.startsWith(href); }
-const managerRoutes = ['/admin/cardapio', '/admin/mesas', '/admin/relatorios', '/admin/conteudo', '/admin/configuracoes'];
+const managerRoutes = ['/admin/cardapio', '/admin/catalogo', '/admin/adicionais', '/admin/promocoes', '/admin/mesas', '/admin/relatorios', '/admin/financas', '/admin/conteudo', '/admin/configuracoes'];
 const adminRoutes = ['/admin/equipe'];
 const canAccess = (path: string, role: AdminSession['role']) => {
   if (adminRoutes.some((route) => path.startsWith(route))) return role === 'ADMIN';

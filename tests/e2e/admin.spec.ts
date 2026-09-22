@@ -15,7 +15,7 @@ test.describe('painel administrativo autenticado', () => {
   });
 
   test('navega todos os módulos publicados sem 404/500', async ({ page }) => {
-    const routes = ['/admin', '/admin/reservas', '/admin/reservas/nova', '/admin/agenda', '/admin/clientes', '/admin/cardapio', '/admin/mesas', '/admin/equipe', '/admin/relatorios', '/admin/conteudo', '/admin/configuracoes', '/admin/setup'];
+    const routes = ['/admin', '/admin/reservas', '/admin/reservas/nova', '/admin/pedidos', '/admin/agenda', '/admin/clientes', '/admin/cardapio', '/admin/catalogo', '/admin/adicionais', '/admin/promocoes', '/admin/mesas', '/admin/caixa', '/admin/financas', '/admin/equipe', '/admin/relatorios', '/admin/conteudo', '/admin/configuracoes', '/admin/configuracoes/pedidos', '/admin/setup'];
     for (const route of routes) {
       const response = await page.goto(route);
       expect(response?.status(), route).toBe(200);
@@ -36,5 +36,12 @@ test.describe('painel administrativo autenticado', () => {
     await page.goto('/admin');
     await expect(page.getByRole('link', { name: 'Atendimento', exact: true })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: 'Navegação rápida' })).toBeVisible();
+  });
+
+  test('conteúdo e configurações expõem persistência real em vez de botões cenográficos', async ({ page }) => {
+    await page.goto('/admin/conteudo');
+    await expect(page.getByRole('button', { name: 'Salvar conteúdo', exact: true })).toBeEnabled();
+    await page.goto('/admin/configuracoes');
+    await expect(page.getByRole('button', { name: 'Salvar configurações', exact: true })).toBeEnabled();
   });
 });
