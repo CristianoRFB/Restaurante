@@ -49,7 +49,7 @@ O percentual considera código publicado, dados reais, segurança, testes e oper
 - O rate limit público usa o binding persistente `RESERVATION_RATE_LIMIT` em Cloudflare KV, com chave derivada por hash do IP.
 - Slots derivam de `openingHours`, timezone, antecedência mínima e duração configuradas.
 - Botões sem persistência foram removidos, desabilitados ou marcados explicitamente como demo.
-- A CSP permite as imagens reais do catálogo armazenadas no Firebase Storage, além dos recursos já necessários.
+- A CSP permite os dois endpoints usados pelas imagens reais do catálogo (`firebasestorage.googleapis.com` e `storage.googleapis.com`), além dos recursos já necessários.
 - O formulário de login aguarda a hidratação antes de aceitar entrada, evitando perda de credenciais em navegador rápido.
 
 ## Evidências desta rodada
@@ -65,8 +65,8 @@ O percentual considera código publicado, dados reais, segurança, testes e oper
 - `npm run test:e2e:auth` com `admin@gmail.com` / `admin123` — 3 testes autenticados aprovados.
 - Smoke remoto — `/`, `/cardapio`, `/conta`, `/reservar`, `/admin/login` retornaram 200; `/admin/atendimento` retornou 404.
 - Smoke remoto do endpoint — payload com `status` privilegiado retornou 400; payload válido sem mesas retornou 409.
-- Smoke visual no navegador — `/cardapio` mostrou categorias, busca, filtros, preços, descrições, imagens reais e links oficiais do iFood.
-- Worker publicado nesta rodada: `62ff20c3-b27c-458d-867d-34e74a32dfec`.
+- Smoke visual no navegador — `/cardapio` mostrou categorias, busca, filtros, preços, descrições, imagens reais (incluindo `POLENTA BROSTOLADA`) e links oficiais do iFood.
+- Worker publicado nesta rodada: `8831fa7d-1f53-488d-ae3c-37e7f77afb3a`.
 - Remoto Git confirmado: `https://github.com/CristianoRFB/Restaurante.git`.
 
 ## Pendências que impedem 100%
