@@ -6,10 +6,10 @@
 - A tela /admin/equipe é exclusiva de ADMIN, alinhada com as Rules.
 - O modo Firebase não renderiza seeds de catálogo, clientes, mesas ou conteúdo como operação real.
 - WhatsApp é somente link externo wa.me; não existe WhatsApp Cloud API nem inbox simulada.
-- O endpoint público aplica limite best-effort por IP no Worker, valida payload sem campos privilegiados e usa token curto de service account apenas no ambiente secreto do Cloudflare.
+- O endpoint público aplica limite persistente de 8 tentativas por minuto e por IP hashado em Cloudflare KV, valida payload sem campos privilegiados e usa token curto de service account apenas no ambiente secreto do Cloudflare.
 - Inputs têm limites de tamanho e não são renderizados como HTML.
 - A configuração do emulador fica centralizada em variáveis com porta 8180.
 
 ## Riscos abertos
 
-App Check no domínio final, uma política de rate limiting persistente (KV/Cloudflare Rules), domínio próprio e cadastro operacional de áreas/mesas ainda precisam de configuração externa antes de declarar prontidão de produção irrestrita. A fronteira confiável, a alocação transacional e a cobertura E2E estão implementadas e verificadas; o sistema prefere bloquear a reserva quando a capacidade real não está cadastrada.
+App Check no domínio final, domínio próprio e cadastro operacional de áreas/mesas ainda precisam de configuração externa antes de declarar prontidão de produção irrestrita. A fronteira confiável, o rate limiting persistente, a alocação transacional e a cobertura E2E estão implementados e verificados; o sistema prefere bloquear a reserva quando a capacidade real não está cadastrada.

@@ -11,7 +11,7 @@ Produto web do Baru Gastronomia para presença pública, cardápio, pedidos onli
 
 O catálogo real publicado no Firebase foi cadastrado a partir do cardápio oficial: 23 categorias, 339 itens ativos, 3 agrupamentos de navegação e 3 destaques na home. Os preços, descrições e imagens exibidos em `/cardapio` vêm dessa carga real; o botão de compra continua levando ao iFood oficial para pagamento e acompanhamento do pedido.
 
-`restaurantSettings/main` também está publicado com o endereço, WhatsApp e horários operacionais reais/confirmados para o ambiente atual. A solicitação pública de reserva passa por `POST /api/reservations`, no Worker, com validação, rate limit de borda, idempotência e locks transacionais. Como ainda não há mesas/áreas operacionais confirmadas no Firebase, o endpoint recusa novas reservas com mensagem explícita; nenhum layout fictício foi usado para simular disponibilidade.
+`restaurantSettings/main` também está publicado com o endereço, WhatsApp e horários operacionais reais/confirmados para o ambiente atual. A solicitação pública de reserva passa por `POST /api/reservations`, no Worker, com validação, rate limit persistente por IP hashado em Cloudflare KV, idempotência e locks transacionais. Como ainda não há mesas/áreas operacionais confirmadas no Firebase, o endpoint recusa novas reservas com mensagem explícita; nenhum layout fictício foi usado para simular disponibilidade.
 
 O endereço padrão do Worker ainda pertence ao namespace Cloudflare disponível nesta conta. O domínio próprio do Baru continua sendo uma configuração externa pendente.
 

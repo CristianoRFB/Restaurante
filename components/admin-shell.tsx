@@ -3,7 +3,7 @@
 import { CalendarDays, ChartNoAxesCombined, ClipboardList, Home, Settings, ShieldCheck, Store, Users, Utensils, LayoutGrid, LogOut, BookOpen } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { signOutAdmin, watchAdminSession, type AdminSession } from '@/lib/baru-repository';
+import { readSession, signOutAdmin, watchAdminSession, type AdminSession } from '@/lib/baru-repository';
 import { isFirebaseDataMode } from '@/lib/firebase-client';
 
 const links = [
@@ -28,8 +28,8 @@ const canAccess = (path: string, role: AdminSession['role']) => {
 };
 
 export function AdminShell({ children, title, subtitle, active = '/admin', actions }: { children: ReactNode; title?: string; subtitle?: string; active?: string; actions?: ReactNode; adminOnly?: boolean }) {
-  const [session, setSession] = useState<AdminSession | null>(null);
-  const [ready, setReady] = useState(false);
+  const [session, setSession] = useState<AdminSession | null>(() => readSession());
+  const [ready, setReady] = useState(() => !isFirebaseDataMode() || Boolean(readSession()));
   useEffect(() => { let mounted = true; const stop = watchAdminSession((next) => { if (!mounted) return; setSession(next); setReady(true); }); const handler = () => { if (mounted && !isFirebaseDataMode()) watchAdminSession((next) => setSession(next)); }; if (!isFirebaseDataMode()) window.addEventListener('baru-session-change', handler); return () => { mounted = false; stop(); window.removeEventListener('baru-session-change', handler); }; }, []);
   const logout = async () => { try { await signOutAdmin(); } finally { window.location.href = '/admin/login'; } };
   if (!ready) return <div className="loading-state" style={{ minHeight: '100vh' }}>Carregando acesso…</div>;

@@ -6,7 +6,7 @@ const database = `projects/${projectId}/databases/(default)`;
 const firestoreDocuments = `https://firestore.googleapis.com/v1/${database}/documents`;
 const requestWindowMs = 60_000;
 const requestLimit = 8;
-const recentRequests = new Map<string, { count: number; resetAt: number }>();
+const fallbackRecentRequests = new Map<string, { count: number; resetAt: number }>();
 let accessTokenCache: { value: string; expiresAt: number } | null = null;
 
 type FirestoreValue = { stringValue?: string; integerValue?: string; booleanValue?: boolean; mapValue?: { fields?: Record<string, FirestoreValue> }; arrayValue?: { values?: FirestoreValue[] }; nullValue?: string };
@@ -147,18 +147,45 @@ async function createReservation(body: Record<string, unknown>): Promise<Record<
   throw new Error('A disponibilidade mudou durante a solicitação. Tente novamente.');
 }
 
-function allowRequest(request: Request): boolean {
-  const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+function clientIp(request: Request): string {
+  return request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+}
+
+async function rateLimitKey(request: Request): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(clientIp(request)));
+  return `reservation:${base64Url(digest)}`;
+}
+
+function allowFallbackRequest(request: Request): boolean {
+  const ip = clientIp(request);
   const now = Date.now();
-  const current = recentRequests.get(ip);
-  if (!current || current.resetAt <= now) { recentRequests.set(ip, { count: 1, resetAt: now + requestWindowMs }); return true; }
+  const current = fallbackRecentRequests.get(ip);
+  if (!current || current.resetAt <= now) { fallbackRecentRequests.set(ip, { count: 1, resetAt: now + requestWindowMs }); return true; }
   if (current.count >= requestLimit) return false;
   current.count += 1;
   return true;
 }
 
+async function allowRequest(request: Request): Promise<boolean> {
+  const kv = (env as unknown as { RESERVATION_RATE_LIMIT?: KVNamespace }).RESERVATION_RATE_LIMIT;
+  if (!kv) return allowFallbackRequest(request);
+  try {
+    const key = await rateLimitKey(request);
+    const now = Date.now();
+    const raw = await kv.get(key);
+    const current = raw ? JSON.parse(raw) as { count: number; resetAt: number } : null;
+    if (current && current.resetAt > now && current.count >= requestLimit) return false;
+    const next = !current || current.resetAt <= now ? { count: 1, resetAt: now + requestWindowMs } : { count: current.count + 1, resetAt: current.resetAt };
+    await kv.put(key, JSON.stringify(next), { expirationTtl: Math.ceil((next.resetAt - now) / 1000) });
+    return true;
+  } catch (error) {
+    console.warn('Rate limit KV indisponível; usando fallback local.', error);
+    return allowFallbackRequest(request);
+  }
+}
+
 export async function POST(request: Request): Promise<Response> {
-  if (!allowRequest(request)) return Response.json({ error: 'Muitas tentativas. Aguarde um minuto.' }, { status: 429, headers: { 'cache-control': 'no-store' } });
+  if (!(await allowRequest(request))) return Response.json({ error: 'Muitas tentativas. Aguarde um minuto.' }, { status: 429, headers: { 'cache-control': 'no-store' } });
   try {
     const body = await request.json() as Record<string, unknown>;
     const allowedKeys = new Set(['date', 'time', 'partySize', 'customerName', 'whatsapp', 'note', 'idempotencyKey']);
