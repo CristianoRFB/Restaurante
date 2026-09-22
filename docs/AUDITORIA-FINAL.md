@@ -1,11 +1,12 @@
 # Auditoria final rígida — Baru Gastronomia
 
-Data da rodada: 22/09/2026  
-Repositório: `CristianoRFB/Restaurante`  
-Origin: `https://github.com/CristianoRFB/Restaurante.git`  
-Worker: `https://baru-gastronomia.acai-mais-sabor.workers.dev`  
-Projeto Firebase: `restaurante-5665d`  
+Data da rodada: 22/09/2026
+Repositório: `CristianoRFB/Restaurante`
+Origin: `https://github.com/CristianoRFB/Restaurante.git`
+Worker: `https://baru-gastronomia.acai-mais-sabor.workers.dev`
+Projeto Firebase: `restaurante-5665d`
 Último Worker publicado nesta rodada: `e425fa4d-7243-4ce3-aff4-538d9ca14b0b`
+Commit de implementação: `910fb69`
 
 ## Resultado executivo
 
