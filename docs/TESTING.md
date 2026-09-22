@@ -1,13 +1,24 @@
 # Testes
 
-Os testes de domínio cobrem validação de calendário, horário, lotação, WhatsApp, observação, códigos e consistência dos seeds. O teste de Rules cobre criação pública, confirmação por cópia opaca, idempotência, leitura/alteração de equipe e exclusão administrativa.
+## Gates
 
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run test:rules
-npm run build
-```
+    npm run lint
+    npm run typecheck
+    npm test
+    npm run test:rules
+    npm run build
+    npm run ci
+    npm audit
+    npm audit --omit=dev
 
-O teste manual recomendado percorre home → cardápio → reserva → confirmação e login demo → dashboard → reservas → edição. Repetir em viewport móvel, teclado, zoom de 200%, formulário inválido e recarga durante a submissão.
+Os testes de domínio cobrem calendário, horários derivados da configuração, lead time, lotação, WhatsApp, observação e códigos. O teste de Rules cobre escrita pública mínima, leitura operacional bloqueada, projeção pública sem telefone completo, idempotência, alteração por equipe e exclusões.
+
+## Verificações manuais
+
+Percorra:
+
+/ → /cardapio → /conta → /reservar → /reserva/[codigo] → login Firebase → dashboard → reservas → edição → clientes → cardápio → mesas → equipe.
+
+Repita em viewport móvel, teclado, zoom de 200%, refresh e duplo clique. Teste ID de reserva inexistente e confirme que nenhuma reserva seed é aberta. Teste também /admin/atendimento: a rota deve responder como inexistente, pois o módulo foi removido.
+
+E2E Playwright e testes adversariais completos ainda são trabalho pendente; a auditoria final deve registrar isso como risco.

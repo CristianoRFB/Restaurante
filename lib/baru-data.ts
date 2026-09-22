@@ -1,4 +1,4 @@
-import type { Area, Conversation, Customer, MenuCategory, MenuItem, RestaurantSettings, RestaurantTable, Reservation, ServiceMoment, SiteContent, TeamMember } from '@/shared/baru-domain';
+import type { Area, Customer, MenuCategory, MenuItem, RestaurantSettings, RestaurantTable, Reservation, ServiceMoment, SiteContent, TeamMember } from '@/shared/baru-domain';
 
 const photos = {
   restaurant: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=85',
@@ -16,12 +16,24 @@ export const settings: RestaurantSettings = {
   name: 'Baru Gastronomia',
   tagline: 'Boa comida aproxima pessoas.',
   city: 'Foz do Iguaçu · PR',
-  address: 'Av. das Cataratas, 1234 · Centro, Foz do Iguaçu · PR',
-  whatsapp: '5545999876543',
+  address: 'Av. Paraná, 3515 · Jardim Central, Foz do Iguaçu · PR',
+  whatsapp: '5545991125003',
   timezone: 'America/Sao_Paulo',
   maxPartySize: 20,
   reservationLeadHours: 2,
+  reservationDurationMinutes: 120,
   confirmationMode: 'MANUAL',
+  officialMenuUrl: 'https://cardapio.barugastronomia.com.br/',
+  onlineOrderingUrl: 'https://www.ifood.com.br/delivery/ok-ok/ok/2f8d493e-c173-4669-899e-1483e9fffb12?UTM_Medium=share',
+  openingHours: {
+    monday: { open: '12:00', close: '23:00', closed: false },
+    tuesday: { open: '12:00', close: '23:00', closed: false },
+    wednesday: { open: '12:00', close: '23:00', closed: false },
+    thursday: { open: '12:00', close: '23:00', closed: false },
+    friday: { open: '12:00', close: '23:00', closed: false },
+    saturday: { open: '12:00', close: '23:00', closed: false },
+    sunday: { open: '', close: '', closed: true },
+  },
   demoMode: true,
 };
 
@@ -92,12 +104,6 @@ export const team: TeamMember[] = [
   { id: 'lucas', name: 'Lucas Ferreira', email: 'lucas.ferreira@email.com', role: 'SERVICE', active: false, permissions: ['RESERVATIONS', 'AGENDA', 'CUSTOMERS'], lastAccess: 'Nunca acessou' },
 ];
 
-export const conversations: Conversation[] = [
-  { id: 'conversation-1', customerId: 'mariana-costa', customerName: 'Mariana Costa', preview: 'Olá! Gostaria de fazer uma reserva para sábado, 4 pessoas.', status: 'NEW', updatedAt: '10:24', messages: [{ id: 'm1', text: 'Olá! Gostaria de fazer uma reserva para sábado, 4 pessoas.', from: 'CUSTOMER', at: '10:24' }, { id: 'm2', text: 'Olá, Mariana! Será um prazer receber vocês no BARU. Para qual horário você gostaria de fazer a reserva?', from: 'TEAM', at: '10:26' }] },
-  { id: 'conversation-2', customerId: 'rafael-mendes', customerName: 'Rafael Mendes', preview: 'É possível alterar a reserva de amanhã para as 20h?', status: 'IN_PROGRESS', updatedAt: '09:56', messages: [{ id: 'm3', text: 'É possível alterar a reserva de amanhã para as 20h?', from: 'CUSTOMER', at: '09:56' }] },
-  { id: 'conversation-3', customerId: 'camila-oliveira', customerName: 'Camila Oliveira', preview: 'Qual o endereço do restaurante?', status: 'WAITING', updatedAt: '09:32', messages: [{ id: 'm4', text: 'Qual o endereço do restaurante?', from: 'CUSTOMER', at: '09:32' }] },
-  { id: 'conversation-4', customerId: 'lucas-ferreira', customerName: 'Lucas Ferreira', preview: 'Muito obrigado! Foi uma experiência incrível ontem.', status: 'DONE', updatedAt: 'Ontem', messages: [{ id: 'm5', text: 'Muito obrigado! Foi uma experiência incrível ontem.', from: 'CUSTOMER', at: 'Ontem' }] },
-];
 
 export const content: SiteContent = {
   heroTitle: 'Gastronomia e bons momentos.',

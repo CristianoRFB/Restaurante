@@ -1,15 +1,29 @@
 # Arquitetura do Baru
 
-O produto é uma aplicação React/TypeScript compilada por Vinext/Vite para Cloudflare Workers. A UI pública e o painel usam componentes reais, sem screenshots como plano de fundo.
+O produto é uma aplicação React/TypeScript compilada por Vinext/Vite para Cloudflare Workers. A UI é composta por componentes reais; as referências visuais ficam apenas como documentação.
 
 ## Camadas
 
-- Domínio: `shared/baru-domain.ts` contém entidades, enums, validação de reserva e regras de apresentação.
-- Dados: `lib/baru-data.ts` contém seeds fictícios e conteúdo inicial do Baru.
-- Repositories: `lib/baru-repository.ts` encapsula persistência local do modo demo e adapters Firebase para autenticação, reservas, confirmação pública e leitura operacional.
-- Apresentação: componentes públicos e administrativos seguem tokens de cor e espaçamento em `app/globals.css`.
-- Autorização: o painel usa sessão local somente no demo; no modo Firebase a sessão é revalidada pelo Auth e pelo documento `users/{uid}`, com guarda de função no shell e Rules no backend.
+- shared/baru-domain.ts: entidades, validações, horários de funcionamento e projeção pública da reserva.
+- lib/baru-data.ts: seeds isolados do modo demo; não são usados como fallback de dados operacionais quando NEXT_PUBLIC_DATA_MODE=firebase.
+- lib/baru-repository.ts: adapters local/Firebase para reservas, catálogo, clientes, mesas, conteúdo, configurações, equipe e autenticação administrativa.
+- lib/customer-account.ts: autenticação Firebase por e-mail/senha e perfil privado em customerAccounts/{uid}.
+- components/admin-shell.tsx: sessão, navegação e autorização de rota. Equipe é exclusiva de ADMIN.
+- firestore.rules: autorização por papel e validação estrutural no backend.
+- Cloudflare Worker: entrega os assets e as rotas Vinext no Worker baru-gastronomia.
 
-## Estado
+## Dados
 
-Reservas demo podem ser criadas e editadas no navegador. Com `NEXT_PUBLIC_DATA_MODE=firebase`, reservas públicas e administrativas usam Firestore, confirmação pública usa cópia opaca e reenvios usam `reservationRequests/{idempotencyKey}` transacional. Os demais módulos administrativos ainda usam seeds demo e serão ligados gradualmente.
+Em modo Firebase, coleções vazias aparecem como estado vazio ou “não cadastrado”; o painel não mistura seeds fictícios com dados reais. O cardápio público direciona pedido ao iFood oficial enquanto não existe checkout próprio implementado.
+
+A reserva pública grava a solicitação operacional, a projeção pública mínima e a chave idempotente em uma operação transacional. A projeção pública não contém o WhatsApp completo. O cliente escolhe apenas data, horário e quantidade; mesa e status privilegiados permanecem fora do fluxo público.
+
+## Autorização
+
+- Visitantes não acessam o painel.
+- ADMIN acessa equipe e funções de gestão.
+- MANAGER acessa módulos operacionais de gestão, exceto equipe.
+- CASHIER e SERVICE não acessam equipe, cardápio, mesas, relatórios, conteúdo ou configurações.
+- As Rules são a autoridade do backend; a UI apenas antecipa o bloqueio.
+
+Não existe rota administrativa de inbox/WhatsApp. O produto mantém somente links externos wa.me construídos com o telefone do cliente/reserva ou configuração verificada do restaurante.

@@ -34,17 +34,43 @@ service cloud.firestore {
         && data.code is string && data.code.size() >= 10 && data.code.size() <= 40
         && data.createdAt is string;
     }
+    function validGuestReservation(data) {
+      return data.keys().hasOnly(['id', 'code', 'date', 'time', 'partySize', 'customerId', 'customerName', 'whatsapp', 'note', 'status', 'source', 'history', 'createdAt', 'updatedAt', 'idempotencyKey'])
+        && data.id is string && data.id.size() >= 8 && data.id.size() <= 100
+        && data.code is string && data.code.size() >= 10 && data.code.size() <= 40
+        && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.time is string && data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && data.partySize is int && data.partySize > 0 && data.partySize <= 20
+        && data.customerId == 'guest'
+        && data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100
+        && data.whatsapp is string && data.whatsapp.matches('^[0-9]{10,15}$')
+        && data.note is string && data.note.size() <= 500
+        && data.status == 'NEW'
+        && data.source == 'SITE'
+        && data.history is list && data.history.size() == 1
+        && data.history[0].status == 'NEW' && data.history[0].by == 'Site'
+        && data.createdAt is string && data.updatedAt is string && data.createdAt == data.updatedAt
+        && data.idempotencyKey is string && data.idempotencyKey.size() >= 16 && data.idempotencyKey.size() <= 100;
+    }
     function validPublicReservation(data) {
-      return data.keys().hasOnly(['id', 'code', 'date', 'time', 'partySize', 'customerName', 'whatsapp', 'status', 'createdAt', 'updatedAt'])
+      return data.keys().hasOnly(['id', 'code', 'date', 'time', 'partySize', 'customerName', 'whatsappLast4', 'status', 'createdAt', 'updatedAt'])
         && data.id is string && data.id.size() >= 8 && data.id.size() <= 100
         && data.code is string && data.code.size() >= 10 && data.code.size() <= 40
         && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && data.time is string && data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
         && data.partySize is int && data.partySize > 0 && data.partySize <= 20
         && data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100
-        && data.whatsapp is string && data.whatsapp.matches('^[0-9]{10,15}$')
+        && data.whatsappLast4 is string && data.whatsappLast4.matches('^[0-9]{4}$')
         && data.status in ['NEW', 'CONFIRMED', 'ARRIVED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']
         && data.createdAt is string && data.updatedAt is string;
+    }
+    function validCustomerAccount(data) {
+      return data.keys().hasOnly(['uid', 'email', 'name', 'whatsapp', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid == request.auth.uid
+        && data.email is string && data.email == request.auth.token.email && data.email.size() <= 320
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && data.createdAt is string && data.updatedAt is string
+        && (!data.keys().hasAny(['whatsapp']) || (data.whatsapp is string && data.whatsapp.matches('^[0-9]{10,15}$')));
     }
 
     match /restaurantSettings/{id} { allow read: if true; allow write: if isAdmin(); }
@@ -56,25 +82,47 @@ service cloud.firestore {
     match /customers/{id} { allow read: if isStaff(); allow create, update: if isStaff(); allow delete: if isManager(); }
     match /reservations/{id} {
       allow read: if isStaff();
-      allow create: if (isStaff() || (!signedIn() && request.resource.data.status == 'NEW')) && validReservation(request.resource.data);
+      allow create: if (isStaff() && validReservation(request.resource.data)) || (!signedIn() && validGuestReservation(request.resource.data));
       allow update: if isStaff() && validReservation(request.resource.data);
       allow delete: if isManager();
     }
     match /publicReservations/{code} {
       allow get: if resource.data.code == code;
       allow list: if false;
-      allow create: if !signedIn() && validPublicReservation(request.resource.data);
+      allow create: if !signedIn() && validPublicReservation(request.resource.data) && request.resource.data.status == 'NEW'
+        && getAfter(/databases/$(database)/documents/reservations/$(request.resource.data.id)).data.code == code
+        && getAfter(/databases/$(database)/documents/reservations/$(request.resource.data.id)).data.status == 'NEW'
+        && getAfter(/databases/$(database)/documents/reservations/$(request.resource.data.id)).data.source == 'SITE';
       allow update: if isStaff() && request.resource.data.code == resource.data.code && validPublicReservation(request.resource.data);
       allow delete: if isManager();
     }
     match /reservationRequests/{key} {
       allow get: if !signedIn();
       allow list: if false;
-      allow create: if (isStaff() || !signedIn()) && validReservationRequest(request.resource.data);
+      allow create: if !signedIn() && validReservationRequest(request.resource.data)
+        && getAfter(/databases/$(database)/documents/reservations/$(request.resource.data.reservationId)).data.code == request.resource.data.code
+        && getAfter(/databases/$(database)/documents/publicReservations/$(request.resource.data.code)).data.id == request.resource.data.reservationId;
       allow update, delete: if false;
     }
-    match /conversations/{id} { allow read, create, update: if isStaff(); allow delete: if isManager(); }
+    match /reservationLocks/{lockId} {
+      allow read: if isStaff();
+      allow create, update: if isStaff()
+        && request.resource.data.keys().hasOnly(['reservationId', 'date', 'time', 'tableId', 'createdAt'])
+        && request.resource.data.reservationId is string
+        && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && request.resource.data.tableId is string
+        && request.resource.data.createdAt is string;
+      allow delete: if isManager();
+    }
     match /siteContent/{id} { allow read: if true; allow write: if isManager(); }
+    match /customerAccounts/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if false;
+      allow create: if signedIn() && request.auth.uid == uid && validCustomerAccount(request.resource.data);
+      allow update: if signedIn() && request.auth.uid == uid && request.resource.data.createdAt == resource.data.createdAt && validCustomerAccount(request.resource.data);
+      allow delete: if false;
+    }
     match /users/{uid} { allow read: if signedIn() && (request.auth.uid == uid || isAdmin()); allow create, update, delete: if isAdmin(); }
     match /{document=**} { allow read, write: if false; }
   }

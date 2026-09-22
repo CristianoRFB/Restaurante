@@ -1,7 +1,7 @@
 BARU GASTRONOMIA — MANIFESTO DAS REFERÊNCIAS VISUAIS
 
-Total esperado: 20 imagens
-Total verificado: 20 imagens
+Total esperado: 19 referências ativas
+Total verificado: 19 referências ativas
 
 Todas foram abertas e validadas como PNG.
 
@@ -19,7 +19,6 @@ Todas foram abertas e validadas como PNG.
 12-admin-cliente-detalhe.png | 1448x1086 | 1724169 bytes | sha256=f90ebd35ceaad1ffe5d8198abfb44713ea5660c37e661579477bbb09a6ac5b8f
 13-admin-cardapio.png | 1448x1086 | 1727186 bytes | sha256=249740f9a475aa1a335549bfd91c55a47a7ed4601f01765ae576aef538e84012
 14-admin-mesas-areas.png | 1448x1086 | 1757490 bytes | sha256=abcca423ecf7b29487eccc76e613b054bc6eae91efcce10687e7a6d9b72ec315
-15-admin-atendimento-whatsapp.png | 1448x1086 | 1791636 bytes | sha256=0686f358ff7477fc04b9bec03a2880bf12b16a91ca6eb39194e0510eabb8fc3b
 16-admin-equipe.png | 1448x1086 | 1645601 bytes | sha256=7f32556105372fd390d7328bcf04b13a00c9bf0ec6006c5f86a68787cedeadeb
 17-admin-relatorios.png | 1448x1086 | 1640212 bytes | sha256=c9eec4f03edc07971d76eae17a05d5911b6c174d917d94a0e6bc379b1c917fda
 18-admin-conteudo-site.png | 1448x1086 | 1823122 bytes | sha256=bf2e2950a20ad4b422a55c29c27c34c8d25cde206a403ccba12cc71ab10382a0

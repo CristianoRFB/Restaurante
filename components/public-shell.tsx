@@ -6,7 +6,7 @@ import { LinkButton } from '@/components/baru-ui';
 import { settings } from '@/lib/baru-data';
 
 export function PublicHeader() {
-  return <header className="public-header"><a className="public-logo" href="/" aria-label="Baru Gastronomia, início">BARU<small>Gastronomia</small></a><nav className="public-nav" aria-label="Navegação principal"><a href="/#o-baru">O Baru</a><a href="/cardapio">Cardápio</a><a href="/#experiencia">Experiência</a><a href="/#chef">Chef</a><a href="/#localizacao">Localização</a><LinkButton href="/reservar" className="header-cta">Reservar mesa</LinkButton></nav><button className="mobile-menu-button" aria-label="Abrir menu"><Menu size={26} /></button></header>;
+  return <header className="public-header"><a className="public-logo" href="/" aria-label="Baru Gastronomia, início">BARU<small>Gastronomia</small></a><nav className="public-nav" aria-label="Navegação principal"><a href="/#o-baru">O Baru</a><a href="/cardapio">Cardápio</a><a href="/conta">Minha conta</a><a href="/#localizacao">Localização</a><LinkButton href="/reservar" className="header-cta">Reservar mesa</LinkButton></nav><button className="mobile-menu-button" aria-label="Abrir menu"><Menu size={26} /></button></header>;
 }
 
 export function PublicFooter() {

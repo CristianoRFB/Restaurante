@@ -1,0 +1,26 @@
+BARU GASTRONOMIA — REFERÊNCIAS VISUAIS ATIVAS
+
+Total ativo: 19 referências.
+
+01 /                         01-public-home.png
+02 /cardapio                 02-public-cardapio.png
+03 /reservar                 03-public-reserva.png
+04 /reserva/[codigo]         04-public-confirmacao-reserva.png
+05 /admin/login              05-admin-login.png
+06 /admin                    06-admin-dashboard.png
+07 /admin/reservas           07-admin-reservas.png
+08 /admin/reservas/nova      08-admin-nova-reserva.png
+09 /admin/reservas/[id]/editar 09-admin-editar-reserva.png
+10 /admin/agenda             10-admin-agenda.png
+11 /admin/clientes           11-admin-clientes.png
+12 /admin/clientes/[id]      12-admin-cliente-detalhe.png
+13 /admin/cardapio           13-admin-cardapio.png
+14 /admin/mesas              14-admin-mesas-areas.png
+16 /admin/equipe             16-admin-equipe.png
+17 /admin/relatorios         17-admin-relatorios.png
+18 /admin/conteudo           18-admin-conteudo-site.png
+19 /admin/configuracoes      19-admin-configuracoes.png
+20 /admin/setup              20-admin-modo-demo-firebase.png
+
+15 — referência descartada: inbox WhatsApp não implementada sem integração oficial.
+O arquivo histórico 15-admin-atendimento-whatsapp.png fica em arquivo/ e não é uma especificação ativa.

@@ -1,23 +1,30 @@
 # Firebase
 
-Projeto alvo: `restaurante-5665d`.
+Projeto alvo: restaurante-5665d.
 
-As variáveis públicas do SDK Web ficam nos arquivos de exemplo. Elas não concedem acesso administrativo. Service accounts, tokens, chaves de CI e `.env` reais ficam fora do Git.
+A configuração web do SDK é pública e fica nos arquivos de exemplo. Service accounts, tokens, senhas e arquivos .env reais não entram no Git. O modo de dados é separado do fato de o SDK conseguir inicializar: a tela de setup distingue fallback do bundle, modo Firebase, ambiente de produção validado e App Check.
 
-O Firestore foi modelado para `restaurantSettings`, `serviceMoments`, `menuCategories`, `menuItems`, `areas`, `tables`, `customers`, `reservations`, `conversations`, `siteContent` e `users`. O adapter modular está disponível em `lib/firebase-client.ts` e `lib/baru-repository.ts`; o modo demo continua sendo o padrão e o modo real é ativado com `NEXT_PUBLIC_DATA_MODE=firebase`.
+## Coleções
 
-No modo real, o login usa Firebase Authentication por e-mail/senha e consulta `users/{uid}` para obter a função; a reserva pública grava `reservations`, `publicReservations` e uma chave de idempotência pelo SDK Web. A confirmação lê somente a cópia pública sanitizada pelo código. Dashboard, lista e edição de reservas já consultam o repository Firebase; os demais módulos mantêm seeds demo até seus repositories serem ligados gradualmente.
+restaurantSettings, serviceMoments, menuCategories, menuItems, areas, tables, customers, reservations, publicReservations, reservationRequests, customerAccounts, siteContent e users.
 
-Para validar Rules localmente:
+Não existe coleção de conversas/inbox no produto atual.
 
-```bash
-npm run test:rules
-```
+## Emulador
 
-Para publicar Rules e índices:
+O Firestore Emulator usa a porta 8180 em firebase.json, .env.example e lib/firebase-client.ts. O cliente lê host e porta pelas variáveis NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST e NEXT_PUBLIC_FIRESTORE_EMULATOR_PORT.
 
-```bash
-npm run deploy:firebase
-```
+## Auth e cliente
 
-O App Check deve ser ativado depois que o domínio de produção estiver cadastrado e a chave do provedor estiver disponível; não se deve colocar uma chave fictícia no ambiente.
+O login da equipe usa Firebase Authentication por e-mail/senha e consulta users/{uid}. A área /conta usa o mesmo provedor, mas grava apenas o perfil do próprio usuário em customerAccounts/{uid}.
+
+## Reserva pública
+
+O visitante pode criar somente uma solicitação NEW de origem SITE, com histórico inicial controlado, sem tableId e sem leitura da coleção operacional. A Rules exige coerência entre a reserva, a projeção pública e a chave de idempotência com getAfter. A confirmação pública lê somente os campos mínimos e exibe apenas os quatro últimos dígitos do WhatsApp.
+
+O limite estrutural de Rules não substitui um endpoint confiável para rate limiting, antiabuso e alocação concorrente de mesas. Overbooking de reserva confirmada deve ser fechado antes de abrir essa operação ao público.
+
+## Comandos
+
+    npm run test:rules
+    npm run deploy:firebase

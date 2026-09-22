@@ -55,10 +55,6 @@ BARU GASTRONOMIA — MAPA OFICIAL DE NAVEGAÇÃO
 /admin/mesas
   Gestão de áreas, mesas, capacidades e estados.
 
-/admin/atendimento
-  Atendimento/WhatsApp.
-  Inicialmente funciona como camada de demonstração e preparação para integração oficial.
-
 /admin/equipe
   Usuários, funções e permissões.
 
@@ -90,7 +86,6 @@ Dashboard -> Reservas -> Detalhe/Edição
 Dashboard -> Agenda
 Reservas -> Nova reserva
 Reservas -> Cliente -> Histórico
-Dashboard -> Atendimento -> Criar/confirmar reserva
 Cardápio -> Editar item
 Configurações -> Ajustar operação
 
@@ -100,7 +95,7 @@ REGRAS DE NAVEGAÇÃO
 - Desktop admin: sidebar persistente.
 - Mobile admin: bottom navigation com Início, Reservas, Agenda e Mais; páginas secundárias entram por "Mais" ou links contextuais.
 - Nunca duplicar uma mesma função em três rotas diferentes.
-- "Nova reserva" deve estar acessível do Dashboard, Reservas, Agenda, Cliente e Atendimento.
+- "Nova reserva" deve estar acessível do Dashboard, Reservas, Agenda e Cliente.
 - "Falar no WhatsApp" deve estar acessível em reserva e cliente.
 - "Ver cliente" deve estar acessível a partir da reserva.
 - "Ver reserva" deve estar acessível a partir do cliente.

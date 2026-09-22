@@ -56,10 +56,6 @@ BARU GASTRONOMIA — ÍNDICE DAS REFERÊNCIAS VISUAIS
     Rota: /admin/mesas
     Referência: 14-admin-mesas-areas.png
 
-15. Atendimento / WhatsApp
-    Rota: /admin/atendimento
-    Referência: 15-admin-atendimento-whatsapp.png
-
 16. Equipe e permissões
     Rota: /admin/equipe
     Referência: 16-admin-equipe.png

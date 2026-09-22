@@ -1,6 +1,5 @@
 export type ServiceMomentId = string;
 export type ReservationStatus = 'NEW' | 'CONFIRMED' | 'ARRIVED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
-export type ConversationStatus = 'NEW' | 'IN_PROGRESS' | 'WAITING' | 'DONE';
 export type Role = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'SERVICE';
 export type TableState = 'AVAILABLE' | 'RESERVED' | 'OCCUPIED' | 'MAINTENANCE';
 
@@ -23,8 +22,31 @@ export interface RestaurantSettings {
   timezone: string;
   maxPartySize: number;
   reservationLeadHours: number;
+  reservationDurationMinutes: number;
   confirmationMode: 'MANUAL' | 'AUTOMATIC';
+  officialMenuUrl: string;
+  onlineOrderingUrl: string;
+  openingHours: OpeningHours;
   demoMode: boolean;
+}
+
+export interface OpeningHours {
+  monday: { open: string; close: string; closed: boolean };
+  tuesday: { open: string; close: string; closed: boolean };
+  wednesday: { open: string; close: string; closed: boolean };
+  thursday: { open: string; close: string; closed: boolean };
+  friday: { open: string; close: string; closed: boolean };
+  saturday: { open: string; close: string; closed: boolean };
+  sunday: { open: string; close: string; closed: boolean };
+}
+
+export interface CustomerAccount {
+  uid: string;
+  email: string;
+  name: string;
+  whatsapp?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ReservationHistoryEntry {
@@ -62,7 +84,7 @@ export interface PublicReservation {
   time: string;
   partySize: number;
   customerName: string;
-  whatsapp: string;
+  whatsappLast4: string;
   status: ReservationStatus;
   createdAt: string;
   updatedAt: string;
@@ -129,16 +151,6 @@ export interface TeamMember {
   lastAccess: string;
 }
 
-export interface Conversation {
-  id: string;
-  customerId: string;
-  customerName: string;
-  preview: string;
-  status: ConversationStatus;
-  updatedAt: string;
-  messages: Array<{ id: string; text: string; from: 'CUSTOMER' | 'TEAM'; at: string }>;
-}
-
 export interface SiteContent {
   heroTitle: string;
   heroSubtitle: string;
@@ -186,6 +198,33 @@ export function normalizeWhatsapp(value: string): string {
   return digits.length <= 11 ? `55${digits}` : digits;
 }
 
+const openingDayKeys: Array<keyof OpeningHours> = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+export function openingHoursForDate(date: string, settings: RestaurantSettings): OpeningHours[keyof OpeningHours] | null {
+  const parsed = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return settings.openingHours[openingDayKeys[parsed.getDay()]];
+}
+
+export function generateTimeSlots(settings: RestaurantSettings, date: string, intervalMinutes = 30): string[] {
+  const opening = openingHoursForDate(date, settings);
+  if (!opening || opening.closed || !/^\d{2}:\d{2}$/.test(opening.open) || !/^\d{2}:\d{2}$/.test(opening.close)) return [];
+  const [openHour, openMinute] = opening.open.split(':').map(Number);
+  const [closeHour, closeMinute] = opening.close.split(':').map(Number);
+  const open = openHour * 60 + openMinute;
+  const close = closeHour * 60 + closeMinute;
+  return Array.from({ length: Math.max(0, Math.ceil((close - open) / intervalMinutes)) }, (_, index) => {
+    const minutes = open + index * intervalMinutes;
+    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  }).filter((time) => time < opening.close);
+}
+
+function dateKeyInTimeZone(date = new Date(), timeZone = 'America/Sao_Paulo'): string {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 export function validateReservation(input: Pick<Reservation, 'date' | 'time' | 'partySize' | 'customerName' | 'whatsapp' | 'note'>, settings: RestaurantSettings): string[] {
   const errors: string[] = [];
   const dateParts = input.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -196,6 +235,12 @@ export function validateReservation(input: Pick<Reservation, 'date' | 'time' | '
   if (!dateParts || Number.isNaN(date.getTime()) || date.getFullYear() !== Number(dateParts[1]) || date.getMonth() !== Number(dateParts[2]) - 1 || date.getDate() !== Number(dateParts[3])) errors.push('Escolha uma data válida.');
   else if (date < today) errors.push('A data da reserva não pode estar no passado.');
   if (!timeIsValid) errors.push('Escolha um horário válido.');
+  if (timeIsValid && dateParts && !generateTimeSlots(settings, input.date).includes(input.time)) errors.push('Escolha um horário dentro do funcionamento do restaurante.');
+  if (dateParts && input.date === dateKeyInTimeZone(new Date(), settings.timezone)) {
+    const minimum = new Date(Date.now() + settings.reservationLeadHours * 60 * 60 * 1000);
+    const selected = new Date(`${input.date}T${input.time}:00`);
+    if (selected <= minimum) errors.push(`As reservas precisam ser feitas com pelo menos ${settings.reservationLeadHours} horas de antecedência.`);
+  }
   if (!Number.isInteger(input.partySize) || input.partySize < 1 || input.partySize > settings.maxPartySize) errors.push(`Informe de 1 a ${settings.maxPartySize} pessoas.`);
   if (input.customerName.trim().length < 2 || input.customerName.trim().length > 100) errors.push('Informe seu nome completo.');
   try { normalizeWhatsapp(input.whatsapp); } catch (error) { errors.push(error instanceof Error ? error.message : 'WhatsApp inválido.'); }
