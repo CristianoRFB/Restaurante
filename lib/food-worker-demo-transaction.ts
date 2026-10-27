@@ -78,12 +78,14 @@ export async function getFoodTxDocument(segments: string[], transaction: string)
   const raw = (await response.text()).trim();
   // A single requested document is rendered as one (potentially pretty-printed) JSON object.
   // Never split on line endings: the Emulator formats object bodies across multiple lines.
-  const value = JSON.parse(raw) as { found?: FireDoc; missing?: string };
-  const values = [value];
-  if (values.length !== 1) throw new Error('Leitura transacional retornou quantidade inesperada de documentos.');
-  if (values[0].missing) return null;
-  if (!values[0].found) throw new Error('Resposta transacional sem documento.');
-  return Object.fromEntries(Object.entries(values[0].found.fields || {}).map(([k, v]) => [k, decode(v)]));
+  const envelope = JSON.parse(raw) as { found?: FireDoc; missing?: string; result?: { found?: FireDoc; missing?: string } };
+  // Firestore REST streaming may wrap a single batchGet response under 'result'.
+  const value = envelope.result ?? envelope;
+  if (value.missing) return null;
+  if (!value.found) {
+    throw new Error('Formato batchGet inesperado: ' + Object.keys(envelope).join(','));
+  }
+  return Object.fromEntries(Object.entries(value.found.fields || {}).map(([k, v]) => [k, decode(v)]));
 }
 export async function createFoodTxOrder(order: FoodDemoOrder, transaction: string): Promise<void> {
   const documentName = firestoreRoot().replace(/^https?:\/\/[^/]+\/v1\//, '') + '/' + path(['tenants', order.tenantId, 'orders', order.id]);
