@@ -77,7 +77,7 @@ export default function FoodPlatformLeadsPage() {
       {leads.map((lead) => <article key={lead.id} style={{ border: '1px solid #888', borderRadius: 8, padding: 16, marginBottom: 12 }}>
         <strong>{lead.name}</strong><p>Status: {lead.status} — CONTRATO NÃO FECHADO</p><p>Autorização de marca: {lead.brandingAuthorization}</p><p>Demo: {lead.demoTenantId || 'não provisionada'}</p>
         <button style={button} disabled={busy} onClick={() => run(() => ensureFoodDemoForLead(lead.id))}>Criar/vincular demo interna</button>
-        {lead.demoTenantId && <><button style={button} disabled={busy} onClick={() => run(() => toggleFoodDemo(lead.demoTenantId!, true))}>Suspender demo</button><button style={button} disabled={busy} onClick={() => run(() => toggleFoodDemo(lead.demoTenantId!, false))}>Reativar demo</button></>}
+        {lead.demoTenantId && <><p><a href={`/t/${encodeURIComponent(lead.demoTenantId)}`}>Abrir prévia privada do catálogo</a></p><button style={button} disabled={busy} onClick={() => run(() => toggleFoodDemo(lead.demoTenantId!, true))}>Suspender demo</button><button style={button} disabled={busy} onClick={() => run(() => toggleFoodDemo(lead.demoTenantId!, false))}>Reativar demo</button></>}
         <p><small>Provisionamento interno do registro. A vitrine, checkout e APIs tenant-aware ainda não estão conectados: não compartilhar como demo funcional.</small></p>
       </article>)}
     </section><p role="status" aria-live="polite">{message}</p>
