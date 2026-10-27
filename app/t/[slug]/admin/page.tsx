@@ -86,7 +86,10 @@ export default function TenantDemoAdmin({ params }: { params: { slug: string } }
     <p><strong>DEMONSTRAÇÃO INTERNA — NÃO É O SISTEMA OFICIAL DE QUALQUER RESTAURANTE.</strong></p>
     <h1>Admin: {ctx.tenant.branding.name}</h1>
     <p>Tenant: <code>{ctx.tenant.id}</code> | Estado: {ctx.tenant.status} | Papel: {ctx.isPlatformOwner ? 'platform_owner' : ctx.membership?.role ?? 'sem papel'}</p>
-    <p><a href={`/t/${encodeURIComponent(ctx.tenant.slug)}`}>Prévia do cardápio</a> | <a href="/platform/leads">Leads</a></p>
+    <p><a href={`/t/${encodeURIComponent(ctx.tenant.slug)}`}>Prévia do cardápio</a> | <a href="/platform/leads">Leads</a>
+      {(ctx.isPlatformOwner || (ctx.membership?.active && ['tenant_owner','ADMIN','MANAGER','CASHIER'].includes(ctx.membership.role))) &&
+        <> | <a href={`/t/${encodeURIComponent(ctx.tenant.slug)}/finance`}>Resumo financeiro DEMO</a></>}
+    </p>
     <p role="status" aria-live="polite">{message}</p>
     {ctx.tenant.status === 'SUSPENDED' && <p role="alert">Tenant suspenso. Alterações estão indisponíveis.</p>}
 

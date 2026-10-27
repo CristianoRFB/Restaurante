@@ -26,6 +26,11 @@ beforeAll(async () => {
     await setDoc(doc(db, 'tenants', demoA.id), demoA);
     await setDoc(doc(db, 'tenants', demoB.id), demoB);
     await setDoc(doc(db, `tenants/${demoA.id}/memberships/staffA`), { uid: 'staffA', role: 'MANAGER', active: true });
+    await setDoc(doc(db, `tenants/${demoA.id}/memberships/cashierA`), { uid: 'cashierA', role: 'CASHIER', active: true });
+    await setDoc(doc(db, `tenants/${demoA.id}/memberships/serviceA`), { uid: 'serviceA', role: 'SERVICE', active: true });
+    await setDoc(doc(db, `tenants/${demoA.id}/orders/demo-order-1234567`), { id:'demo-order-1234567', tenantId:demoA.id, demoOnly:true, subtotalCents:2000 });
+    await setDoc(doc(db, `tenants/${demoB.id}/orders/demo-order-7654321`), { id:'demo-order-7654321', tenantId:demoB.id, demoOnly:true, subtotalCents:9000 });
+
     await setDoc(doc(db, `tenants/${demoA.id}/memberships/ownerA`), { uid: 'ownerA', role: 'tenant_owner', active: true });
     await setDoc(doc(db, `tenants/${demoB.id}/memberships/staffB`), { uid: 'staffB', role: 'MANAGER', active: true });
     await setDoc(doc(db, `tenants/${demoA.id}/menuItems/p001`), product(demoA.id));
@@ -111,6 +116,18 @@ describe('Food Platform: Rules tenant-aware (aditivas ao legado)', () => {
     await assertFails(setDoc(doc(a,`tenants/${demoA.id}/tables/mesa003`),{...table,id:'mesa003',tenantId:demoB.id}));
     await assertFails(setDoc(doc(a,`tenants/${demoA.id}/reservations/abc`),{id:'abc'}));
     await assertFails(setDoc(doc(a,`tenants/${demoA.id}/reservationLocks/abc`),{id:'abc'}));
+  });
+  it('financeiro simulado lista apenas pedidos do próprio tenant e bloqueia SERVICE', async () => {
+    const cashier = env.authenticatedContext('cashierA').firestore();
+    const manager = env.authenticatedContext('staffA').firestore();
+    const service = env.authenticatedContext('serviceA').firestore();
+    const platform = env.authenticatedContext('owner').firestore();
+    await assertSucceeds(getDocs(collection(cashier, `tenants/${demoA.id}/orders`)));
+    await assertSucceeds(getDocs(collection(manager, `tenants/${demoA.id}/orders`)));
+    await assertFails(getDocs(collection(service, `tenants/${demoA.id}/orders`)));
+    await assertFails(getDocs(collection(cashier, `tenants/${demoB.id}/orders`)));
+    await assertFails(setDoc(doc(cashier, `tenants/${demoA.id}/orders/fake`), { id:'fake',subtotalCents:1 }));
+    await assertSucceeds(getDocs(collection(platform, `tenants/${demoB.id}/orders`)));
   });
   it('suspensão impede operações de staff, mas mantém governança plataforma', async () => {
     const owner = env.authenticatedContext('owner').firestore();

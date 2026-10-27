@@ -326,6 +326,10 @@ service cloud.firestore {
       return foodMember(tenantId) &&
         get(/databases/$(database)/documents/tenants/$(tenantId)/memberships/$(request.auth.uid)).data.role in ['tenant_owner', 'ADMIN', 'MANAGER'];
     }
+    function foodFinanceReader(tenantId) {
+      return foodMember(tenantId)
+        && get(/databases/$(database)/documents/tenants/$(tenantId)/memberships/$(request.auth.uid)).data.role in ['tenant_owner', 'ADMIN', 'MANAGER', 'CASHIER'];
+    }
     function validFoodLead(data, leadId) {
       return data.keys().hasOnly(['id', 'name', 'vertical', 'source', 'sourceUrl', 'status', 'contractStatus', 'brandingAuthorization', 'createdAt', 'updatedAt', 'demoTenantId'])
         && data.keys().hasAll(['id', 'name', 'vertical', 'source', 'sourceUrl', 'status', 'contractStatus', 'brandingAuthorization', 'createdAt', 'updatedAt'])
@@ -444,8 +448,9 @@ service cloud.firestore {
         allow create, update, delete: if false;
       }
       match /orders/{orderId} {
-        allow get, list: if isFoodPlatformOwner() || foodMember(tenantId);
-        allow create, update, delete: if false; // Trusted tenant-aware API only, not implemented yet
+        allow get: if isFoodPlatformOwner() || foodMember(tenantId);
+        allow list: if isFoodPlatformOwner() || foodFinanceReader(tenantId);
+        allow create, update, delete: if false; // Worker-only demo writes.
       }
     }
 
