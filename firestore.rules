@@ -330,10 +330,7 @@ service cloud.firestore {
       return data.keys().hasOnly(['id', 'name', 'vertical', 'source', 'sourceUrl', 'status', 'contractStatus', 'brandingAuthorization', 'createdAt', 'updatedAt', 'demoTenantId'])
         && data.keys().hasAll(['id', 'name', 'vertical', 'source', 'sourceUrl', 'status', 'contractStatus', 'brandingAuthorization', 'createdAt', 'updatedAt'])
         && data.id == leadId
-        && leadId.matches('^[a-z][a-z0-9-]{2,39}
-  }
-}
-)
+        && leadId.matches('^[a-z][a-z0-9-]{2,39}$')
         && data.name is string && data.name.size() >= 3 && data.name.size() <= 120
         && data.vertical == 'FOOD'
         && data.source in ['repositorio_legado', 'cadastro_manual']
@@ -348,10 +345,7 @@ service cloud.firestore {
       return data.keys().hasOnly(['id', 'slug', 'linkedLeadId', 'kind', 'status', 'subscriptionStatus', 'planId', 'publiclyListed', 'branding', 'createdAt', 'updatedAt'])
         && data.keys().hasAll(['id', 'slug', 'linkedLeadId', 'kind', 'status', 'subscriptionStatus', 'planId', 'publiclyListed', 'branding', 'createdAt', 'updatedAt'])
         && data.id == tenantId && data.slug == tenantId
-        && tenantId.matches('^[a-z][a-z0-9-]{2,62}
-  }
-}
-)
+        && tenantId.matches('^[a-z][a-z0-9-]{2,62}$')
         && data.linkedLeadId is string && data.linkedLeadId + '-demo' == tenantId
         && exists(/databases/$(database)/documents/platformLeads/$(data.linkedLeadId))
         && data.kind == 'DEMO' && data.status in ['DEMO', 'SUSPENDED']
@@ -361,10 +355,7 @@ service cloud.firestore {
         && data.branding.keys().hasAll(['name', 'tagline', 'primaryColor'])
         && data.branding.name is string && data.branding.name.size() >= 3 && data.branding.name.size() <= 120
         && data.branding.tagline is string && data.branding.tagline.size() <= 240
-        && data.branding.primaryColor is string && data.branding.primaryColor.matches('^#[0-9a-fA-F]{6}
-  }
-}
-)
+        && data.branding.primaryColor is string && data.branding.primaryColor.matches('^#[0-9a-fA-F]{6}$')
         && data.createdAt is string && data.updatedAt is string;
     }
     function validFoodMembership(data, uid) {
