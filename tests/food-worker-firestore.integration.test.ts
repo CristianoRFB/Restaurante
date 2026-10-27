@@ -1,6 +1,6 @@
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import {
-  beginFoodDemoTransaction, createFoodTxOrder, foodDemoOrdersEnabled,
+  beginFoodDemoTransaction, createFoodTxOrder, createFoodTxDocuments, foodDemoOrdersEnabled,
   getFoodTxDocument, rollbackFoodDemoTransaction, FoodFirestoreConflict,
 } from '@/lib/food-worker-demo-transaction';
 import type { FoodDemoOrder } from '@/shared/food-demo-order';
@@ -64,6 +64,35 @@ describe('Firestore Emulator — transação REST de pedido multi-tenant', () =>
     await expect(createFoodTxOrder(order(id), second)).rejects.toBeInstanceOf(FoodFirestoreConflict);
     await rollbackFoodDemoTransaction(second);
   });
+  it('cria reserva e 3 bloqueios atomicamente; colisão não deixa reserva órfã', async () => {
+    const stamp = crypto.randomUUID().replace(/-/g, '').slice(0, 15);
+    const slotBase = '20261030_';
+    const locks = ['1900','1930','2000'].map(t => 'mesa001_' + slotBase + t + '_' + stamp);
+    const firstId = 'res_' + stamp + '_1';
+    const secondId = 'res_' + stamp + '_2';
+    const makeWrites = (tenantId: string, reservationId: string, slotIds: string[]) => [
+      { segments: ['tenants',tenantId,'reservations',reservationId], record: {id:reservationId, tenantId,demoOnly:true} },
+      ...slotIds.map((id) => ({ segments: ['tenants',tenantId,'reservationLocks',id], record: {id,tenantId,reservationId,demoOnly:true} })),
+    ];
+    const tx = await beginFoodDemoTransaction();
+    await createFoodTxDocuments(makeWrites('food-a-demo',firstId,locks),tx);
+    const read = await beginFoodDemoTransaction();
+    expect(await getFoodTxDocument(['tenants','food-a-demo','reservations',firstId],read)).toMatchObject({id:firstId,tenantId:'food-a-demo'});
+    for(const lock of locks) expect(await getFoodTxDocument(['tenants','food-a-demo','reservationLocks',lock],read)).toMatchObject({reservationId:firstId});
+    await rollbackFoodDemoTransaction(read);
+    const collision = await beginFoodDemoTransaction();
+    await expect(createFoodTxDocuments(makeWrites('food-a-demo',secondId,locks.slice(1).concat('mesa002_'+stamp)),collision)).rejects.toBeInstanceOf(FoodFirestoreConflict);
+    await rollbackFoodDemoTransaction(collision);
+    const reread = await beginFoodDemoTransaction();
+    expect(await getFoodTxDocument(['tenants','food-a-demo','reservations',secondId],reread)).toBeNull();
+    await rollbackFoodDemoTransaction(reread);
+    const other = await beginFoodDemoTransaction();
+    await createFoodTxDocuments(makeWrites('food-b-demo',secondId,locks),other);
+    const verifyOther = await beginFoodDemoTransaction();
+    expect(await getFoodTxDocument(['tenants','food-b-demo','reservations',secondId],verifyOther)).toMatchObject({id:secondId});
+    await rollbackFoodDemoTransaction(verifyOther);
+  });
+
   it('isola documento por tenant e rejeita caminho de travessia', async () => {
     const id = 'demoorder_' + crypto.randomUUID().replace(/-/g, '').slice(0, 24);
     const tx = await beginFoodDemoTransaction();
