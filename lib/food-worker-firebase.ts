@@ -14,7 +14,7 @@ function decodeBase64(value: string): ArrayBuffer {
   const binary = atob(value.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - value.length % 4) % 4));
   return Uint8Array.from(binary, (v) => v.charCodeAt(0)).buffer;
 }
-async function serviceToken(): Promise<string> {
+export async function serviceToken(): Promise<string> {
   if (cache && cache.expiresAt > Date.now() + 60_000) return cache.token;
   const secret = (env as unknown as Record<string, string | undefined>).FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!secret) throw new Error('Firebase service account indisponível no Worker.');
