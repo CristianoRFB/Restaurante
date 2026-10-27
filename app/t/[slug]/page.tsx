@@ -46,7 +46,7 @@ export default function PrivateFoodDemo({ params }: { params: { slug: string } }
               {items.map((item) => <article key={item.id} style={{ padding: 18, border: '1px solid #999', borderRadius: 8 }}>
                 <strong>{item.name}</strong><p>{item.description}</p>
                 <p>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.priceCents / 100)}</p>
-                <small>Catálogo fictício. Checkout tenant-aware ainda indisponível.</small>
+                <small>Catálogo fictício. Checkout demo disponível somente no Emulator. Nenhum pedido comercial é efetuado.</small>
               </article>)}
             </div>
           </section>}

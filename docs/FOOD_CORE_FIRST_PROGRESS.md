@@ -26,6 +26,10 @@
 - Pedidos DEMO isolados: `POST /api/t/[slug]/orders` e `/t/[slug]/checkout` com preço de produtos lido pelo Worker, criação condicional atômica no Firestore Emulator, replay idempotente por `clientRequestId`, ausência de cobrança e carrinho isolado. Suite REST Emulator: `tests/food-worker-firestore.integration.test.ts` validada no CI #40552277981. Isso **não** significa pedidos, caixa ou reservas do Baru migrados.
 - Leitura privada do contexto Worker no modo Emulator utiliza localhost/projeto `demo-`; o ambiente legado permanece intocado.
 
+- Reserva DEMO tenant-aware: `POST /api/t/[slug]/reservations`, `/t/[slug]/reservations`, `/t/[slug]/tables`; mesa/capacidade/ACL de tenant lidas no Worker, bloqueios de três slots de 30 min criados atomicamente com reserva no Firestore Emulator. Replays idempotentes e colisões A×B cobertos por unit + REST Emulator; CI #40563938285 passou. QRs são **privados**, exigem autenticação e não são links comerciais.
+- Mesas DEMO na coleção `tenants/{tenantId}/tables` com Security Rules de acesso por tenant e CRUD gestor. Seed sintético A/B inclui mesas. Não executado em Firebase real.
+- QR/checkout/reservas ainda não passaram por E2E autenticado no navegador. Reserva real, horários configuráveis, cancelamento, conflitos de fuso/horário de verão, pagamentos, atendimento e caixas continuam pendentes.
+
 ## Next required implementation in the same GOAL
 
 1. Attach the `tenants` resolver to public/admin routes using trusted context.
