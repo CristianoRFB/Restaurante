@@ -1,5 +1,6 @@
 // Only localhost Firestore Emulator and demo- projects. Never accesses actual Baru project.
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import type { Firestore } from 'firebase/firestore';
 import {
   assertFoodMigrationEnvironment, planFoodLegacyMigration,
   applyFoodLegacyMigration, rollbackFoodLegacyMigration,
@@ -23,7 +24,8 @@ const [host,port] = hostSetting.split(':');
 const env = await initializeTestEnvironment({ projectId, firestore: { host, port: Number(port) } });
 try {
   await env.withSecurityRulesDisabled(async ctx => {
-    const db = ctx.firestore();
+    // Emulator testing context exposes a compatibility Firestore surface backed by the same SDK.
+    const db = ctx.firestore() as unknown as Firestore;
     if (mode === 'plan') {
       const entries = await planFoodLegacyMigration(db, tenantId);
       process.stdout.write(JSON.stringify({ dryRun: true, tenantId, migration: 'food-legacy-emulator-v1',
