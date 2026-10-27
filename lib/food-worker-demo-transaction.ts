@@ -78,14 +78,16 @@ export async function getFoodTxDocument(segments: string[], transaction: string)
   const raw = (await response.text()).trim();
   // A single requested document is rendered as one (potentially pretty-printed) JSON object.
   // Never split on line endings: the Emulator formats object bodies across multiple lines.
-  const envelope = JSON.parse(raw) as { found?: FireDoc; missing?: string; result?: { found?: FireDoc; missing?: string } };
-  // Firestore REST streaming may wrap a single batchGet response under 'result'.
-  const value = envelope.result ?? envelope;
-  if (value.missing) return null;
-  if (!value.found) {
-    throw new Error('Formato batchGet inesperado: ' + Object.keys(envelope).join(','));
+  type BatchEntry = { found?: FireDoc; missing?: string };
+  const envelope = JSON.parse(raw) as BatchEntry | { result: BatchEntry } | BatchEntry[];
+  // Emulator returns an array; some REST gateways return a single envelope object.
+  if (Array.isArray(envelope) && envelope.length !== 1) {
+    throw new Error('batchGet esperava exatamente um documento.');
   }
-  return Object.fromEntries(Object.entries(value.found.fields || {}).map(([k, v]) => [k, decode(v)]));
+  const item = Array.isArray(envelope) ? envelope[0] : ('result' in envelope ? envelope.result : envelope);
+  if (item.missing) return null;
+  if (!item.found) throw new Error('Formato batchGet sem found/missing.');
+  return Object.fromEntries(Object.entries(item.found.fields || {}).map(([k, v]) => [k, decode(v)]));
 }
 export async function createFoodTxOrder(order: FoodDemoOrder, transaction: string): Promise<void> {
   const documentName = firestoreRoot().replace(/^https?:\/\/[^/]+\/v1\//, '') + '/' + path(['tenants', order.tenantId, 'orders', order.id]);
