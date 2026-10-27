@@ -305,6 +305,121 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /users/{uid} { allow read: if signedIn() && (request.auth.uid == uid || isAdmin()); allow create, update, delete: if isAdmin(); }
+
+    // === SaaS Food CORE_FIRST (additive namespace, legacy root collections unchanged) ===
+    function isFoodPlatformOwner() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/platformAdmins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/platformAdmins/$(request.auth.uid)).data.role == 'platform_owner'
+        && get(/databases/$(database)/documents/platformAdmins/$(request.auth.uid)).data.active == true;
+    }
+    function foodTenantActive(tenantId) {
+      return exists(/databases/$(database)/documents/tenants/$(tenantId))
+        && get(/databases/$(database)/documents/tenants/$(tenantId)).data.status == 'DEMO';
+    }
+    function foodMember(tenantId) {
+      return signedIn() && foodTenantActive(tenantId)
+        && exists(/databases/$(database)/documents/tenants/$(tenantId)/memberships/$(request.auth.uid))
+        && get(/databases/$(database)/documents/tenants/$(tenantId)/memberships/$(request.auth.uid)).data.active == true;
+    }
+    function foodManager(tenantId) {
+      return foodMember(tenantId) &&
+        get(/databases/$(database)/documents/tenants/$(tenantId)/memberships/$(request.auth.uid)).data.role in ['tenant_owner', 'ADMIN', 'MANAGER'];
+    }
+    function validFoodLead(data, leadId) {
+      return data.keys().hasOnly(['id', 'name', 'vertical', 'source', 'sourceUrl', 'status', 'contractStatus', 'brandingAuthorization', 'createdAt', 'updatedAt', 'demoTenantId'])
+        && data.keys().hasAll(['id', 'name', 'vertical', 'source', 'sourceUrl', 'status', 'contractStatus', 'brandingAuthorization', 'createdAt', 'updatedAt'])
+        && data.id == leadId
+        && leadId.matches('^[a-z][a-z0-9-]{2,39}
+  }
+}
+)
+        && data.name is string && data.name.size() >= 3 && data.name.size() <= 120
+        && data.vertical == 'FOOD'
+        && data.source in ['repositorio_legado', 'cadastro_manual']
+        && data.sourceUrl is string && data.sourceUrl.size() <= 2048
+        && (data.sourceUrl == '' || data.sourceUrl.matches('^https://.*'))
+        && data.status == 'NAO_CONVERTIDO' && data.contractStatus == 'NOT_SIGNED'
+        && data.brandingAuthorization == 'UNCONFIRMED'
+        && data.createdAt is string && data.updatedAt is string
+        && (!data.keys().hasAny(['demoTenantId']) || (data.demoTenantId is string && data.demoTenantId == leadId + '-demo'));
+    }
+    function validFoodDemo(data, tenantId) {
+      return data.keys().hasOnly(['id', 'slug', 'linkedLeadId', 'kind', 'status', 'subscriptionStatus', 'planId', 'publiclyListed', 'branding', 'createdAt', 'updatedAt'])
+        && data.keys().hasAll(['id', 'slug', 'linkedLeadId', 'kind', 'status', 'subscriptionStatus', 'planId', 'publiclyListed', 'branding', 'createdAt', 'updatedAt'])
+        && data.id == tenantId && data.slug == tenantId
+        && tenantId.matches('^[a-z][a-z0-9-]{2,62}
+  }
+}
+)
+        && data.linkedLeadId is string && data.linkedLeadId + '-demo' == tenantId
+        && exists(/databases/$(database)/documents/platformLeads/$(data.linkedLeadId))
+        && data.kind == 'DEMO' && data.status in ['DEMO', 'SUSPENDED']
+        && data.subscriptionStatus == 'demo' && data.planId == 'PREMIUM_DEMO'
+        && data.publiclyListed == false
+        && data.branding is map && data.branding.keys().hasOnly(['name', 'tagline', 'primaryColor'])
+        && data.branding.keys().hasAll(['name', 'tagline', 'primaryColor'])
+        && data.branding.name is string && data.branding.name.size() >= 3 && data.branding.name.size() <= 120
+        && data.branding.tagline is string && data.branding.tagline.size() <= 240
+        && data.branding.primaryColor is string && data.branding.primaryColor.matches('^#[0-9a-fA-F]{6}
+  }
+}
+)
+        && data.createdAt is string && data.updatedAt is string;
+    }
+    function validFoodMembership(data, uid) {
+      return data.keys().hasOnly(['uid', 'role', 'active'])
+        && data.keys().hasAll(['uid', 'role', 'active'])
+        && data.uid == uid && data.role in ['tenant_owner', 'ADMIN', 'MANAGER', 'CASHIER', 'SERVICE']
+        && data.active is bool;
+    }
+    function validFoodMenuItem(data, tenantId, itemId) {
+      return data.keys().hasOnly(['id', 'tenantId', 'name', 'description', 'categoryId', 'priceCents', 'active'])
+        && data.keys().hasAll(['id', 'tenantId', 'name', 'description', 'categoryId', 'priceCents', 'active'])
+        && data.id == itemId && data.tenantId == tenantId
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.description is string && data.description.size() <= 500
+        && data.categoryId is string && data.categoryId.size() >= 1 && data.categoryId.size() <= 100
+        && data.priceCents is int && data.priceCents >= 0 && data.priceCents <= 10000000
+        && data.active is bool;
+    }
+    match /platformAdmins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false; // Admin SDK only
+    }
+    match /platformLeads/{leadId} {
+      allow read: if isFoodPlatformOwner();
+      allow create: if isFoodPlatformOwner() && validFoodLead(request.resource.data, leadId);
+      allow update: if isFoodPlatformOwner() && validFoodLead(request.resource.data, leadId)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+    match /tenants/{tenantId} {
+      allow get: if isFoodPlatformOwner() || foodMember(tenantId);
+      allow list: if isFoodPlatformOwner();
+      allow create: if isFoodPlatformOwner() && validFoodDemo(request.resource.data, tenantId);
+      allow update: if isFoodPlatformOwner() && validFoodDemo(request.resource.data, tenantId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.linkedLeadId == resource.data.linkedLeadId;
+      allow delete: if false;
+      match /memberships/{uid} {
+        allow get: if isFoodPlatformOwner() || (signedIn() && request.auth.uid == uid);
+        allow list: if isFoodPlatformOwner();
+        allow create, update: if isFoodPlatformOwner() && validFoodMembership(request.resource.data, uid);
+        allow delete: if false;
+      }
+      match /menuItems/{itemId} {
+        allow read: if isFoodPlatformOwner() || foodMember(tenantId);
+        allow create, update: if (isFoodPlatformOwner() || foodManager(tenantId))
+          && validFoodMenuItem(request.resource.data, tenantId, itemId);
+        allow delete: if isFoodPlatformOwner() || foodManager(tenantId);
+      }
+      match /orders/{orderId} {
+        allow get, list: if isFoodPlatformOwner() || foodMember(tenantId);
+        allow create, update, delete: if false; // Trusted tenant-aware API only, not implemented yet
+      }
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }
