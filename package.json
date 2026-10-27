@@ -15,7 +15,7 @@
     "lint": "oxlint app components lib shared tests scripts vitest.config.ts vite.config.ts",
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --config vitest.config.ts --exclude tests/firestore.rules.test.ts",
+    "test": "vitest run --config vitest.config.ts --exclude tests/firestore.rules.test.ts --exclude tests/food-platform.rules.test.ts",
     "test:domain": "vitest run --config vitest.config.ts tests/baru-domain.test.ts tests/baru-data.test.ts tests/order-domain.test.ts",
     "test:rules": "node scripts/test-rules.mjs",
     "test:e2e": "playwright test",
