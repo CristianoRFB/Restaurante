@@ -11,8 +11,12 @@ function portOpen(port) {
 }
 
 const existing = await portOpen(8180);
+const authExisting = await portOpen(9099);
+if (existing !== authExisting) {
+  throw new Error('Firestore e Auth Emulator precisam iniciar juntos (8180 e 9099).');
+}
 const command = existing
-  ? ['node_modules/vitest/vitest.mjs', ['run', '--config', 'vitest.config.ts', 'tests/firestore.rules.test.ts', 'tests/food-platform.rules.test.ts', 'tests/food-worker-firestore.integration.test.ts', 'tests/food-legacy-migration.integration.test.ts', '--no-file-parallelism']]
-  : ['node_modules/firebase-tools/lib/bin/firebase.js', ['emulators:exec', '--project', 'demo-baru-gastronomia', '--only', 'firestore', 'vitest run --config vitest.config.ts tests/firestore.rules.test.ts tests/food-platform.rules.test.ts tests/food-worker-firestore.integration.test.ts tests/food-legacy-migration.integration.test.ts --no-file-parallelism']];
+  ? ['node_modules/vitest/vitest.mjs', ['run', '--config', 'vitest.config.ts', 'tests/firestore.rules.test.ts', 'tests/food-platform.rules.test.ts', 'tests/food-worker-firestore.integration.test.ts', 'tests/food-legacy-migration.integration.test.ts', 'tests/food-worker-http.integration.test.ts', '--no-file-parallelism']]
+  : ['node_modules/firebase-tools/lib/bin/firebase.js', ['emulators:exec', '--project', 'demo-baru-gastronomia', '--only', 'firestore,auth', 'vitest run --config vitest.config.ts tests/firestore.rules.test.ts tests/food-platform.rules.test.ts tests/food-worker-firestore.integration.test.ts tests/food-legacy-migration.integration.test.ts tests/food-worker-http.integration.test.ts --no-file-parallelism']];
 const child = spawn(process.execPath, [command[0], ...command[1]], { stdio: 'inherit', shell: false, env: { ...process.env, ...(existing ? { FIRESTORE_EMULATOR_HOST: '127.0.0.1:8180' } : {}) } });
 child.on('exit', (code) => process.exit(code ?? 1));
