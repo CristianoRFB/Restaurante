@@ -89,23 +89,40 @@ export async function getFoodTxDocument(segments: string[], transaction: string)
   if (!item.found) throw new Error('Formato batchGet sem found/missing.');
   return Object.fromEntries(Object.entries(item.found.fields || {}).map(([k, v]) => [k, decode(v)]));
 }
-export async function createFoodTxOrder(order: FoodDemoOrder, transaction: string): Promise<void> {
-  const documentName = firestoreRoot().replace(/^https?:\/\/[^/]+\/v1\//, '') + '/' + path(['tenants', order.tenantId, 'orders', order.id]);
-  const response = await firestore(':commit', { method: 'POST', body: JSON.stringify({
-    transaction,
-    writes: [{
-      update: { name: documentName, fields: Object.fromEntries(Object.entries(order).map(([k, v]) => [k, encode(v)])) },
+export interface FoodTxCreate { segments: string[]; record: Record<string, unknown> }
+export async function createFoodTxDocuments(writes: FoodTxCreate[], transaction: string): Promise<void> {
+  if (!foodDemoOrdersEnabled() || !transaction || writes.length < 1 || writes.length > 12) {
+    throw new Error('Escrita transacional demo inválida.');
+  }
+  const seen = new Set<string>();
+  const mutations = writes.map(({ segments, record }) => {
+    const relative = path(segments);
+    if (seen.has(relative)) throw new Error('Documento repetido na mesma transação.');
+    seen.add(relative);
+    const name = firestoreRoot().replace(/^https?:\/\/[^/]+\/v1\//, '') + '/' + relative;
+    return {
+      update: { name, fields: Object.fromEntries(Object.entries(record).map(([k,v]) => [k, encode(v)])) },
       currentDocument: { exists: false },
-    }],
-  }) });
-  if (response.status === 409 || response.status === 412) throw new FoodFirestoreConflict('Conflito concorrente; repita com o mesmo requestId.');
+    };
+  });
+  const response = await firestore(':commit', {
+    method: 'POST', body: JSON.stringify({ transaction, writes: mutations }),
+  });
+  if (response.status === 409 || response.status === 412) throw new FoodFirestoreConflict('Conflito concorrente no agendamento.');
   if (!response.ok) {
     const data = await response.json().catch(() => ({})) as FireError;
-    if (data.error?.status === 'ABORTED' || data.error?.status === 'ALREADY_EXISTS' || data.error?.status === 'FAILED_PRECONDITION') {
-      throw new FoodFirestoreConflict('Conflito concorrente; repita com o mesmo requestId.');
+    if (['ABORTED','ALREADY_EXISTS','FAILED_PRECONDITION'].includes(data.error?.status || '')) {
+      throw new FoodFirestoreConflict('Reserva já existente ou horário indisponível.');
     }
-    throw new Error('Falha ao salvar pedido demo em transação.');
+    throw new Error('Falha em transação Firestore demonstrativa.');
   }
+}
+
+export async function createFoodTxOrder(order: FoodDemoOrder, transaction: string): Promise<void> {
+  await createFoodTxDocuments([{
+    segments: ['tenants', order.tenantId, 'orders', order.id],
+    record: { ...order },
+  }], transaction);
 }
 export async function rollbackFoodDemoTransaction(transaction: string): Promise<void> {
   await firestore(':rollback', { method: 'POST', body: JSON.stringify({ transaction }) }).catch(() => undefined);
