@@ -67,11 +67,24 @@ export async function beginFoodDemoTransaction(): Promise<string> {
   return data.transaction;
 }
 export async function getFoodTxDocument(segments: string[], transaction: string): Promise<Record<string, unknown> | null> {
-  const response = await firestore('/' + path(segments) + '?transaction=' + encodeURIComponent(transaction));
-  if (response.status === 404) return null;
+  // Firestore's batchGet documents RPC supports a transaction snapshot and
+  // returns an explicit 'missing' projection for absent records.
+  const name = firestoreRoot().replace(/^https?:\/\/[^/]+\/v1\//, '') + '/' + path(segments);
+  const response = await firestore(':batchGet', {
+    method: 'POST',
+    body: JSON.stringify({ documents: [name], transaction }),
+  });
   if (!response.ok) throw new Error('Falha na leitura transacional Firebase.');
-  const data = await response.json() as FireDoc;
-  return Object.fromEntries(Object.entries(data.fields || {}).map(([k, v]) => [k, decode(v)]));
+  const raw = (await response.text()).trim();
+  // The REST gateway may return NDJSON (streamed) or a single object for one document.
+  const values = raw.split('\n').filter(Boolean).map((line) => JSON.parse(line) as {
+    found?: FireDoc;
+    missing?: string;
+  });
+  if (values.length !== 1) throw new Error('Leitura transacional retornou quantidade inesperada de documentos.');
+  if (values[0].missing) return null;
+  if (!values[0].found) throw new Error('Resposta transacional sem documento.');
+  return Object.fromEntries(Object.entries(values[0].found.fields || {}).map(([k, v]) => [k, decode(v)]));
 }
 export async function createFoodTxOrder(order: FoodDemoOrder, transaction: string): Promise<void> {
   const documentName = firestoreRoot().replace(/^https?:\/\/[^/]+\/v1\//, '') + '/' + path(['tenants', order.tenantId, 'orders', order.id]);
