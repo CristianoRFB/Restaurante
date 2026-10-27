@@ -17,6 +17,9 @@
 - `tenant_owner` pode provisionar/revogar funcionários SERVICE/CASHIER/MANAGER apenas no próprio tenant; `ADMIN` e `tenant_owner` só via Platform Owner, conforme Rules.
 - Testes negativos A×B de memberships, spoof do tenantId e catálogo. Segue sendo CORE_FIRST, sem checkout público ou servidor tenant-aware.
 
+- Login de equipe específico por tenant em `/t/[slug]/login` e prévia de catálogo agora utilizando o mesmo `resolveFoodTenant` e Rules que o admin; sem reaproveitar sessões locais inseguras do legado.
+- Não há checkout demo ligado e a UI exige sessão autenticada. O CI de build/Rules é validação de código, não prova de browser ou produção.
+
 ## Next required implementation in the same GOAL
 
 1. Attach the `tenants` resolver to public/admin routes using trusted context.

@@ -80,7 +80,7 @@ export default function TenantDemoAdmin({ params }: { params: { slug: string } }
   }
 
   if (loading) return <main style={shell}><h1>Admin do tenant</h1><p role="status">Carregando permissões e dados…</p></main>;
-  if (!ctx) return <main style={shell}><h1>Acesso restrito</h1><p role="alert">{message}</p><p><a href="/platform/leads">Voltar à plataforma</a></p></main>;
+  if (!ctx) return <main style={shell}><h1>Acesso restrito</h1><p role="alert">{message}</p><p><a href={`/t/${encodeURIComponent(params.slug)}/login`}>Entrar ou trocar conta</a></p></main>;
 
   return <main style={shell}>
     <p><strong>DEMONSTRAÇÃO INTERNA — NÃO É O SISTEMA OFICIAL DE QUALQUER RESTAURANTE.</strong></p>
