@@ -78,8 +78,10 @@ describe('pedidos de demonstração Food — domínio/isolamento', () => {
       placeFoodDemoOrder(tenantA.slug, 'userA', payload, store),
       placeFoodDemoOrder(tenantA.slug, 'userA', payload, store),
     ]);
-    expect(result.filter((x) => x.status === 'fulfilled')).toHaveLength(1);
-    expect(result.filter((x) => x.status === 'rejected')).toHaveLength(1);
     expect(written.size).toBe(1);
+    // Two identical concurrent calls may finish as create + replay, or create + conflict.
+    const fulfilled = result.filter((x) => x.status === 'fulfilled').map((x) => x.value);
+    expect(fulfilled.filter((x) => x.created)).toHaveLength(1);
+    expect(result).toHaveLength(2);
   });
 });

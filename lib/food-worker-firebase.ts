@@ -73,7 +73,7 @@ export async function verifyFoodFirebaseBearer(request: Request): Promise<string
   // Local demo tokens must NEVER be sent to the production Google Identity Toolkit.
   const emulatorMode = process.env.FOOD_DEMO_ORDERS_MODE === 'emulator';
   const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
-  if (emulatorMode && !/^(127\\.0\\.0\\.1|localhost):[0-9]{2,5}$/.test(emulatorHost)) {
+  if (emulatorMode && !/^(127\.0\.0\.1|localhost):[0-9]{2,5}$/.test(emulatorHost)) {
     throw new FoodWorkerAuthError('Auth Emulator host inválido.');
   }
   const identityUrl = emulatorMode
