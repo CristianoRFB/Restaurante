@@ -76,11 +76,10 @@ export async function getFoodTxDocument(segments: string[], transaction: string)
   });
   if (!response.ok) throw new Error('Falha na leitura transacional Firebase.');
   const raw = (await response.text()).trim();
-  // The REST gateway may return NDJSON (streamed) or a single object for one document.
-  const values = raw.split('\n').filter(Boolean).map((line) => JSON.parse(line) as {
-    found?: FireDoc;
-    missing?: string;
-  });
+  // A single requested document is rendered as one (potentially pretty-printed) JSON object.
+  // Never split on line endings: the Emulator formats object bodies across multiple lines.
+  const value = JSON.parse(raw) as { found?: FireDoc; missing?: string };
+  const values = [value];
   if (values.length !== 1) throw new Error('Leitura transacional retornou quantidade inesperada de documentos.');
   if (values[0].missing) return null;
   if (!values[0].found) throw new Error('Resposta transacional sem documento.');
