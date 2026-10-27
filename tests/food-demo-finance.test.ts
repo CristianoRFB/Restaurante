@@ -23,7 +23,7 @@ describe('financeiro DEMO: volume fictício sem cobrança',()=>{
   it('rejeita tenant alheio, itens adulterados, duplicatas ou transação paga',()=>{
     expect(()=>summarizeFoodDemoFinance('other-tenant',[example])).toThrow();
     expect(()=>summarizeFoodDemoFinance(tenant,[example,example])).toThrow();
-    expect(()=>summarizeFoodDemoFinance(tenant,[{...example,paymentRequired:true}])).toThrow();
+    expect(()=>summarizeFoodDemoFinance(tenant,[{...example,paymentRequired:true} as unknown as FoodDemoOrder])).toThrow();
     expect(()=>summarizeFoodDemoFinance(tenant,[{...example,subtotalCents:1}])).toThrow();
     expect(()=>summarizeFoodDemoFinance(tenant,[{...example,items:[{...example.items[0],lineCents:1}]}])).toThrow();
   });
