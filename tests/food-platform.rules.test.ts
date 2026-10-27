@@ -47,7 +47,10 @@ describe('Food Platform: Rules tenant-aware (aditivas ao legado)', () => {
   it('permite que Platform Owner leia lead e crie apenas demo, jamais cliente pago', async () => {
     const owner = env.authenticatedContext('owner').firestore();
     await assertSucceeds(getDoc(doc(owner, 'platformLeads/baru-gastronomia')));
-    await assertSucceeds(setDoc(doc(owner, 'tenants/terceiro-demo'), { ...demoA, id: 'terceiro-demo', slug: 'terceiro-demo' }));
+    const thirdLead = newFoodLead('Restaurante Terceiro', 'cadastro_manual', '', now);
+    const thirdDemo = newFoodDemoTenant(thirdLead, now);
+    await assertSucceeds(setDoc(doc(owner, 'platformLeads', thirdLead.id), thirdLead));
+    await assertSucceeds(setDoc(doc(owner, 'tenants', thirdDemo.id), thirdDemo));
     await assertFails(setDoc(doc(owner, 'tenants/cliente-pago'), { ...demoA, id: 'cliente-pago', slug: 'cliente-pago', subscriptionStatus: 'active' }));
     await assertFails(setDoc(doc(owner, 'platformLeads/pago'), { ...lead, id: 'pago', status: 'CONVERTIDO' }));
   });
