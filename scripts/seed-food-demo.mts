@@ -44,7 +44,7 @@ try {
       const tenantRef = doc(db, 'tenants', tenant.id);
       const existingTenant = await getDoc(tenantRef);
       if (existingTenant.exists() && existingTenant.data().linkedLeadId !== lead.id) throw new Error('Tenant conflitante, não sobrescrever.');
-      await createUnlessExists('tenants/' + tenant.id, tenant);
+      await createUnlessExists('tenants/' + tenant.id, { ...tenant });
       for (const item of items[index]) {
         await createUnlessExists('tenants/' + tenant.id + '/menuItems/' + item.id, { ...item, tenantId: tenant.id });
       }
