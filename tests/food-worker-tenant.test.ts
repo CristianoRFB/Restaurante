@@ -9,9 +9,9 @@ function provider(): FoodTenantWorkerLookup {
     tenant: vi.fn(async (slug) => (slug === tenantA.id ? tenantA : slug === tenantB.id ? tenantB : null)),
     platformAdmin: vi.fn(async (uid) => uid === 'platform' ? { role: 'platform_owner', active: true } : null),
     member: vi.fn(async (slug, uid) => {
-      if (slug === tenantA.id && uid === 'memberA') return { uid, role: 'MANAGER', active: true };
-      if (slug === tenantB.id && uid === 'memberB') return { uid, role: 'SERVICE', active: true };
-      if (slug === tenantA.id && uid === 'revoked') return { uid, role: 'MANAGER', active: false };
+      if (slug === tenantA.id && uid === 'memberA') return { uid, role: 'MANAGER' as const, active: true };
+      if (slug === tenantB.id && uid === 'memberB') return { uid, role: 'SERVICE' as const, active: true };
+      if (slug === tenantA.id && uid === 'revoked') return { uid, role: 'MANAGER' as const, active: false };
       return null;
     }),
   };
