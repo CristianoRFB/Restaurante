@@ -10,6 +10,13 @@
 - Existing legacy `users/{uid}` roles are NOT platform owners, and no global billing/entitlement engine was added.
 - No production Firebase, Cloudflare deploy, data import, real-world notifications or real client changes were performed by this change.
 
+## Implementado nesta continuação
+
+- Catálogo multi-tenant de demonstração com CRUD real via Firestore: `/t/[slug]/admin`, `lib/food-tenant-repository.ts`, `shared/food-tenant-domain.ts`.
+- Resolver de contexto do tenant com uid/membership persistidos no Firestore, login obrigatório, suspensão e checagem de papel; a camada cliente não é fonte final de autorização.
+- `tenant_owner` pode provisionar/revogar funcionários SERVICE/CASHIER/MANAGER apenas no próprio tenant; `ADMIN` e `tenant_owner` só via Platform Owner, conforme Rules.
+- Testes negativos A×B de memberships, spoof do tenantId e catálogo. Segue sendo CORE_FIRST, sem checkout público ou servidor tenant-aware.
+
 ## Next required implementation in the same GOAL
 
 1. Attach the `tenants` resolver to public/admin routes using trusted context.

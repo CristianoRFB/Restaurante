@@ -26,6 +26,7 @@ beforeAll(async () => {
     await setDoc(doc(db, 'tenants', demoA.id), demoA);
     await setDoc(doc(db, 'tenants', demoB.id), demoB);
     await setDoc(doc(db, `tenants/${demoA.id}/memberships/staffA`), { uid: 'staffA', role: 'MANAGER', active: true });
+    await setDoc(doc(db, `tenants/${demoA.id}/memberships/ownerA`), { uid: 'ownerA', role: 'tenant_owner', active: true });
     await setDoc(doc(db, `tenants/${demoB.id}/memberships/staffB`), { uid: 'staffB', role: 'MANAGER', active: true });
     await setDoc(doc(db, `tenants/${demoA.id}/menuItems/p001`), product(demoA.id));
     await setDoc(doc(db, `tenants/${demoB.id}/menuItems/p001`), product(demoB.id));
@@ -69,6 +70,30 @@ describe('Food Platform: Rules tenant-aware (aditivas ao legado)', () => {
     await assertFails(setDoc(doc(a, `tenants/${demoA.id}/menuItems/forged`), { ...product(demoB.id), id: 'forged' }));
     await assertFails(setDoc(doc(a, `tenants/${demoA.id}/memberships/staffA`), { uid: 'staffA', role: 'tenant_owner', active: true }));
     await assertFails(setDoc(doc(a, `tenants/${demoA.id}/orders/fake`), { id: 'fake' }));
+  });
+  it('permite tenant_owner gerir membros operacionais em A, mas não escalar para ADMIN ou tenant_owner nem tocar B', async () => {
+    const ownerA = env.authenticatedContext('ownerA').firestore();
+    const staffA = env.authenticatedContext('staffA').firestore();
+    await assertSucceeds(getDocs(collection(ownerA, `tenants/${demoA.id}/memberships`)));
+    await assertFails(getDocs(collection(ownerA, `tenants/${demoB.id}/memberships`)));
+    await assertFails(getDocs(collection(staffA, `tenants/${demoA.id}/memberships`)));
+    await assertSucceeds(setDoc(doc(ownerA, `tenants/${demoA.id}/memberships/memberX`), { uid: 'memberX', role: 'SERVICE', active: true }));
+    await assertSucceeds(updateDoc(doc(ownerA, `tenants/${demoA.id}/memberships/memberX`), { active: false }));
+    await assertFails(setDoc(doc(ownerA, `tenants/${demoA.id}/memberships/adminX`), { uid: 'adminX', role: 'ADMIN', active: true }));
+    await assertFails(setDoc(doc(ownerA, `tenants/${demoA.id}/memberships/ownerX`), { uid: 'ownerX', role: 'tenant_owner', active: true }));
+    await assertFails(setDoc(doc(ownerA, `tenants/${demoB.id}/memberships/crossX`), { uid: 'crossX', role: 'SERVICE', active: true }));
+    await assertFails(updateDoc(doc(ownerA, `tenants/${demoA.id}/memberships/ownerA`), { active: false }));
+  });
+  it('CRUD de catálogo autentica por tenant e papel: gestor A opera A, B não invade, service não modifica', async () => {
+    const ownerA = env.authenticatedContext('ownerA').firestore();
+    const service = env.authenticatedContext('other').firestore();
+    const staffB = env.authenticatedContext('staffB').firestore();
+    const record = { ...product(demoA.id), id: 'p-two' };
+    await assertSucceeds(setDoc(doc(ownerA, `tenants/${demoA.id}/menuItems/p-two`), record));
+    await assertSucceeds(updateDoc(doc(ownerA, `tenants/${demoA.id}/menuItems/p-two`), { priceCents: 3090 }));
+    await assertFails(updateDoc(doc(staffB, `tenants/${demoA.id}/menuItems/p-two`), { priceCents: 1 }));
+    await assertFails(setDoc(doc(service, `tenants/${demoA.id}/menuItems/p-other`), { ...record, id: 'p-other' }));
+    await assertFails(setDoc(doc(ownerA, `tenants/${demoA.id}/menuItems/p-forged`), { ...record, id: 'p-forged', tenantId: demoB.id }));
   });
   it('suspensão impede operações de staff, mas mantém governança plataforma', async () => {
     const owner = env.authenticatedContext('owner').firestore();

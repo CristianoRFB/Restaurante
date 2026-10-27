@@ -358,6 +358,13 @@ service cloud.firestore {
         && data.branding.primaryColor is string && data.branding.primaryColor.matches('^#[0-9a-fA-F]{6}$')
         && data.createdAt is string && data.updatedAt is string;
     }
+    function foodTenantOwner(tenantId) {
+      return foodMember(tenantId)
+        && get(/databases/$(database)/documents/tenants/$(tenantId)/memberships/$(request.auth.uid)).data.role == 'tenant_owner';
+    }
+    function foodOwnerAssignableRole(data) {
+      return data.role in ['MANAGER', 'CASHIER', 'SERVICE'];
+    }
     function validFoodMembership(data, uid) {
       return data.keys().hasOnly(['uid', 'role', 'active'])
         && data.keys().hasAll(['uid', 'role', 'active'])
@@ -394,9 +401,16 @@ service cloud.firestore {
         && request.resource.data.linkedLeadId == resource.data.linkedLeadId;
       allow delete: if false;
       match /memberships/{uid} {
-        allow get: if isFoodPlatformOwner() || (signedIn() && request.auth.uid == uid);
-        allow list: if isFoodPlatformOwner();
-        allow create, update: if isFoodPlatformOwner() && validFoodMembership(request.resource.data, uid);
+        allow get: if isFoodPlatformOwner() || foodTenantOwner(tenantId) || (signedIn() && request.auth.uid == uid);
+        allow list: if isFoodPlatformOwner() || foodTenantOwner(tenantId);
+        allow create: if validFoodMembership(request.resource.data, uid)
+          && (isFoodPlatformOwner() || (foodTenantOwner(tenantId) && foodOwnerAssignableRole(request.resource.data)));
+        allow update: if validFoodMembership(request.resource.data, uid)
+          && (isFoodPlatformOwner() || (
+            foodTenantOwner(tenantId)
+            && resource.data.role in ['MANAGER', 'CASHIER', 'SERVICE']
+            && foodOwnerAssignableRole(request.resource.data)
+          ));
         allow delete: if false;
       }
       match /menuItems/{itemId} {
