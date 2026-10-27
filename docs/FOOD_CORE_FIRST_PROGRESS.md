@@ -20,6 +20,9 @@
 - Login de equipe específico por tenant em `/t/[slug]/login` e prévia de catálogo agora utilizando o mesmo `resolveFoodTenant` e Rules que o admin; sem reaproveitar sessões locais inseguras do legado.
 - Não há checkout demo ligado e a UI exige sessão autenticada. O CI de build/Rules é validação de código, não prova de browser ou produção.
 
+- Fronteira **read-only** no Worker: `GET /api/t/[slug]/context` verifica Firebase ID token contra Identity Toolkit, consulta tenant e ACL com credencial de serviço já prevista no Worker e rejeita acesso cruzado, revogado ou suspenso. Testes unitários do resolver em `tests/food-worker-tenant.test.ts`.
+- Importante: o endpoint de contexto NÃO conclui os pedidos ou reservas. Ainda falta adaptar handlers de escrita com autorização/isolamento repetidos em cada transação, e teste de integração real do Worker.
+
 ## Next required implementation in the same GOAL
 
 1. Attach the `tenants` resolver to public/admin routes using trusted context.
