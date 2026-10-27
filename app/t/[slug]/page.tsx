@@ -51,6 +51,7 @@ export default function PrivateFoodDemo({ params }: { params: { slug: string } }
             </div>
           </section>}
         <p><a href={`/t/${encodeURIComponent(context.tenant.slug)}/checkout`}>Montar pedido de demonstração</a> (sem cobrança, somente Emulator)</p>
+        <p><a href={`/t/${encodeURIComponent(context.tenant.slug)}/reservations`}>Simular reserva de mesa</a> — sem mensagem ou reserva comercial.</p>
         {context.canManageCatalog && <p><a href={`/t/${encodeURIComponent(context.tenant.slug)}/admin`}>Gerenciar catálogo/equipe</a></p>}
         <p><a href="/platform/leads">Voltar à plataforma (Platform Owner)</a></p>
       </>}

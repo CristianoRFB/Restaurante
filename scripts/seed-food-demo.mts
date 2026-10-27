@@ -48,6 +48,10 @@ try {
       for (const item of items[index]) {
         await createUnlessExists('tenants/' + tenant.id + '/menuItems/' + item.id, { ...item, tenantId: tenant.id });
       }
+      await createUnlessExists('tenants/' + tenant.id + '/tables/mesa001',
+        { id:'mesa001',tenantId:tenant.id,name:'Mesa 1 (fictícia)',capacity:4,active:true,state:'AVAILABLE' });
+      await createUnlessExists('tenants/' + tenant.id + '/tables/mesa002',
+        { id:'mesa002',tenantId:tenant.id,name:'Mesa 2 (fictícia)',capacity:6,active:true,state:'AVAILABLE' });
     }
   });
   process.stdout.write('Seed local concluído: ' + created + ' documentos criados; pré-existentes preservados.\n');
