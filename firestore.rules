@@ -396,7 +396,12 @@ service cloud.firestore {
       return data.keys().hasOnly(['id','tenantId','name','capacity','active','state'])
         && data.keys().hasAll(['id','tenantId','name','capacity','active','state'])
         && data.id == tableId && data.tenantId == tenantId
-        && tableId.matches('^[a-zA-Z0-9_-]{3,100}
+        && tableId.matches('^[a-zA-Z0-9_-]{3,100}$')
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 80
+        && data.capacity is int && data.capacity >= 1 && data.capacity <= 20
+        && data.active is bool && data.state in ['AVAILABLE','MAINTENANCE'];
+    }
+    match /tenants/{tenantId} {
       allow get: if isFoodPlatformOwner() || foodMember(tenantId);
       allow list: if isFoodPlatformOwner();
       allow create: if isFoodPlatformOwner() && validFoodDemo(request.resource.data, tenantId);
@@ -432,52 +437,11 @@ service cloud.firestore {
       }
       match /reservations/{reservationId} {
         allow get, list: if isFoodPlatformOwner() || foodMember(tenantId);
-        allow create, update, delete: if false; // Worker transaction only.
+        allow create, update, delete: if false;
       }
       match /reservationLocks/{lockId} {
         allow get, list: if isFoodPlatformOwner() || foodMember(tenantId);
-        allow create, update, delete: if false; // Worker transaction only.
-      }
-      match /orders/{orderId} {
-        allow get, list: if isFoodPlatformOwner() || foodMember(tenantId);
-        allow create, update, delete: if false; // Trusted tenant-aware API only, not implemented yet
-      }
-    }
-
-    match /{document=**} { allow read, write: if false; }
-  }
-}
-)
-        && data.name is string && data.name.size() >= 2 && data.name.size() <= 80
-        && data.capacity is int && data.capacity >= 1 && data.capacity <= 20
-        && data.active is bool && data.state in ['AVAILABLE','MAINTENANCE'];
-    }
-    match /tenants/{tenantId} {
-      allow get: if isFoodPlatformOwner() || foodMember(tenantId);
-      allow list: if isFoodPlatformOwner();
-      allow create: if isFoodPlatformOwner() && validFoodDemo(request.resource.data, tenantId);
-      allow update: if isFoodPlatformOwner() && validFoodDemo(request.resource.data, tenantId)
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.linkedLeadId == resource.data.linkedLeadId;
-      allow delete: if false;
-      match /memberships/{uid} {
-        allow get: if isFoodPlatformOwner() || foodTenantOwner(tenantId) || (signedIn() && request.auth.uid == uid);
-        allow list: if isFoodPlatformOwner() || foodTenantOwner(tenantId);
-        allow create: if validFoodMembership(request.resource.data, uid)
-          && (isFoodPlatformOwner() || (foodTenantOwner(tenantId) && foodOwnerAssignableRole(request.resource.data)));
-        allow update: if validFoodMembership(request.resource.data, uid)
-          && (isFoodPlatformOwner() || (
-            foodTenantOwner(tenantId)
-            && resource.data.role in ['MANAGER', 'CASHIER', 'SERVICE']
-            && foodOwnerAssignableRole(request.resource.data)
-          ));
-        allow delete: if false;
-      }
-      match /menuItems/{itemId} {
-        allow read: if isFoodPlatformOwner() || foodMember(tenantId);
-        allow create, update: if (isFoodPlatformOwner() || foodManager(tenantId))
-          && validFoodMenuItem(request.resource.data, tenantId, itemId);
-        allow delete: if isFoodPlatformOwner() || foodManager(tenantId);
+        allow create, update, delete: if false;
       }
       match /orders/{orderId} {
         allow get, list: if isFoodPlatformOwner() || foodMember(tenantId);
