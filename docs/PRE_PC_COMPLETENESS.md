@@ -15,7 +15,7 @@ Não confundir a maturidade do site Baru (single-tenant legado) com a prontidão
 | 3 | Memberships/RBAC/revogação de staff | `lib/food-tenant-repository.ts`, `app/t/[slug]/admin/page.tsx`, Rules | CODE_COMPLETE demo | 1 |
 | 4 | CRUD catálogo demo por tenant | `shared/food-tenant-domain.ts`, repository, Rules/unit tests | CODE_COMPLETE demo | 1 |
 | 5 | Login por tenant e prévia de catálogo | `app/t/[slug]/login/page.tsx`, `app/t/[slug]/page.tsx` — falta E2E | PARTIAL | 0,5 |
-| 6 | Resolver tenant seguro no Worker | APIs legadas não usam TenantContext | MISSING | 0 |
+| 6 | Resolver tenant seguro no Worker | `shared/food-worker-tenant.ts`, `app/api/t/[slug]/context/route.ts`, unitário; falta conectar writes | PARTIAL | 0,5 |
 | 7 | Migração Baru idempotente DRY_RUN / rollback | Sem utilitário verificado | MISSING | 0 |
 | 8 | Orders por tenant, preço servidor/idempotência | `app/api/orders/route.ts` opera legado | MISSING SaaS | 0 |
 | 9 | Reservas/QR/locks tenant-aware | `app/api/reservations/route.ts` opera legado | MISSING SaaS | 0 |
@@ -23,12 +23,12 @@ Não confundir a maturidade do site Baru (single-tenant legado) com a prontidão
 | 11 | White-label além de nome/tagline/cor | Branding demo mínimo | PARTIAL | 0,5 |
 | 12 | E2E A/B navegador/Worker/KV + visuais verificados | CI atual verifica unit/Rules/build | PARTIAL | 0,5 |
 
-**Medição fixa:** 5,5 / 12 = **45,8% de cobertura ponderada** destes itens, NÃO grau de prontidão para produção. Não declarar 95% sem evidência.
+**Medição fixa:** 6 / 12 = **50,0% de cobertura ponderada** destes itens, NÃO grau de prontidão para produção. Não declarar 95% sem evidência.
 
 ## NOW F1–F6
 
 - F1 PARTIAL: manter Baru e construir migração reversível.
-- F2 PARTIAL: lead, demos, roles e catálogo; backend Worker ainda não tenant-aware.
+- F2 PARTIAL: lead, demos, roles, catálogo e contexto Worker read-only; mutations ainda não usam TenantContext.
 - F3 MISSING SaaS: pedidos/reservas/caixa são legados.
 - F4 MISSING e mantido fora do CORE_FIRST: Global Standard depois de isolamento backend.
 - F5 PARTIAL: telas demo privadas, demais módulos ainda não tenantizados.
@@ -36,7 +36,7 @@ Não confundir a maturidade do site Baru (single-tenant legado) com a prontidão
 
 ## Próximo código prioritário
 
-Fronteira TenantContext confiável no Worker com tenant/status/ACL validados e paths tenant-aware. Em seguida, preservar algoritmos legados e portar pedidos, reservas, locks/idempotência e KV para tenant A/B com testes negativos e de concorrência. Não ligar checkout demo ou deploy até a fronteira passar testes de integração.
+Conectar o contexto Worker validado em cada mutation tenant-aware, repetindo autorização/status na transação. Em seguida, preservar algoritmos legados e portar pedidos, reservas, locks/idempotência e KV para tenant A/B com testes negativos e de concorrência. Não ligar checkout demo ou deploy até a fronteira passar testes de integração.
 
 ## Provas e segurança
 
