@@ -23,6 +23,9 @@
 - Fronteira **read-only** no Worker: `GET /api/t/[slug]/context` verifica Firebase ID token contra Identity Toolkit, consulta tenant e ACL com credencial de serviço já prevista no Worker e rejeita acesso cruzado, revogado ou suspenso. Testes unitários do resolver em `tests/food-worker-tenant.test.ts`.
 - Importante: o endpoint de contexto NÃO conclui os pedidos ou reservas. Ainda falta adaptar handlers de escrita com autorização/isolamento repetidos em cada transação, e teste de integração real do Worker.
 
+- Pedidos DEMO isolados: `POST /api/t/[slug]/orders` e `/t/[slug]/checkout` com preço de produtos lido pelo Worker, criação condicional atômica no Firestore Emulator, replay idempotente por `clientRequestId`, ausência de cobrança e carrinho isolado. Suite REST Emulator: `tests/food-worker-firestore.integration.test.ts` validada no CI #40552277981. Isso **não** significa pedidos, caixa ou reservas do Baru migrados.
+- Leitura privada do contexto Worker no modo Emulator utiliza localhost/projeto `demo-`; o ambiente legado permanece intocado.
+
 ## Next required implementation in the same GOAL
 
 1. Attach the `tenants` resolver to public/admin routes using trusted context.

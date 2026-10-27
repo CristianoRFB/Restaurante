@@ -10,7 +10,7 @@
 - Criação utiliza `currentDocument.exists=false` em `tenants/{tenantId}/orders/{clientRequestId}`: mesmo ID+payload retorna o mesmo pedido; ID com payload diferente retorna 409. Conflitos concorrentes retornam 409 para retry com o mesmo ID.
 - Resultado `DEMO_RECEIVED` é **simulação sem cobrança, preparo ou entrega**; não envia qualquer notificação externa nem atualiza o legado.
 - A Rules vigente permite leitura a membros/plataforma e impede escrita direta pelo SDK cliente; apenas o endpoint confiável efetua transação.
-- Endpoint somente de teste/emulator ainda precisa da verificação autenticada do Firebase Auth Emulator e teste de integração REST Emulator para ser classificado CODE_COMPLETE. Unit tests isolam política/precificação/idempotência, mas não provam commit REST hospedado.
+- Testes unitários cobrem precificação/idempotência e a suíte `tests/food-worker-firestore.integration.test.ts` executa commit, releitura, conflito e isolamento de paths no Firestore Emulator (CI #40552277981). Ainda falta o E2E autenticado usando Firebase Auth Emulator e navegador; por isso o contrato F3 segue PARTIAL, e produção/Worker real não foram testados.
 
 ## Exemplo de payload sintético
 
