@@ -34,7 +34,7 @@ describe('pedidos de demonstração Food — domínio/isolamento', () => {
     const value = await placeFoodDemoOrder(tenantA.slug, 'userA', payload, store, time);
     expect(value).toMatchObject({ created: true, order: { tenantId: tenantA.id, subtotalCents: 4797, status: 'DEMO_RECEIVED', demoOnly: true, paymentRequired: false } });
     expect(value.order.items[0]).toMatchObject({ quantity: 3, priceCents: 1599, lineCents: 4797 });
-    expect((value.order as Record<string, unknown>).whatsapp).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(value.order, 'whatsapp')).toBe(false);
     await expect(placeFoodDemoOrder(tenantA.slug, 'userA', { ...payload, tenantId: tenantB.id }, store)).rejects.toMatchObject({ code: 'VALIDATION' });
     await expect(placeFoodDemoOrder(tenantA.slug, 'userA', { ...payload, totalCents: 1 }, store)).rejects.toMatchObject({ code: 'VALIDATION' });
   });

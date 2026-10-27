@@ -70,7 +70,16 @@ export async function verifyFoodFirebaseBearer(request: Request): Promise<string
   if (!authorization.startsWith('Bearer ') || authorization.length > 5000) throw new FoodWorkerAuthError('Token ausente.');
   const key = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '';
   if (!key) throw new Error('Firebase Auth não configurado no Worker.');
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(key)}`, {
+  // Local demo tokens must NEVER be sent to the production Google Identity Toolkit.
+  const emulatorMode = process.env.FOOD_DEMO_ORDERS_MODE === 'emulator';
+  const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
+  if (emulatorMode && !/^(127\\.0\\.0\\.1|localhost):[0-9]{2,5}$/.test(emulatorHost)) {
+    throw new FoodWorkerAuthError('Auth Emulator host inválido.');
+  }
+  const identityUrl = emulatorMode
+    ? 'http://' + emulatorHost + '/identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + encodeURIComponent(key)
+    : 'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + encodeURIComponent(key);
+  const response = await fetch(identityUrl, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ idToken: authorization.slice(7) }),
     signal: AbortSignal.timeout(10_000),
   });

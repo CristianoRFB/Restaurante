@@ -1,5 +1,3 @@
-import { env } from 'cloudflare:workers';
-import { serviceToken } from '@/lib/food-worker-firebase';
 import type { FoodDemoOrderStore, FoodDemoOrder } from '@/shared/food-demo-order';
 import type { FoodDemoTenant } from '@/shared/food-platform-domain';
 import type { FoodTenantMembership, FoodTenantMenuItem } from '@/shared/food-tenant-domain';
@@ -55,7 +53,8 @@ async function firestore(pathSuffix: string, options: RequestInit = {}): Promise
   const url = firestoreRoot() + pathSuffix;
   return fetch(url, {
     ...options,
-    headers: { 'content-type': 'application/json', ...options.headers },
+    // Emulator-only privileged REST call; NEVER transmit the magic owner token to remote endpoints.
+    headers: { 'content-type': 'application/json', authorization: 'Bearer owner', ...options.headers },
     signal: AbortSignal.timeout(10_000),
   });
 }
