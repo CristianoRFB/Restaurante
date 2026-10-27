@@ -52,8 +52,17 @@ export function projectFoodLegacyDocument(type: FoodLegacyCollection, id: string
   throw new Error('Coleção fora da lista permitida.');
 }
 
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value as JsonObject)
+      .sort(([a], [b]) => a.localeCompare(b)).map(([key, child]) => [key, canonical(child)]));
+  }
+  return value;
+}
 async function checksum(value: JsonObject): Promise<string> {
-  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(value))));
+  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode(JSON.stringify(canonical(value)))));
   return Array.from(bytes, x => x.toString(16).padStart(2, '0')).join('');
 }
 function ledgerId(type: FoodLegacyCollection, id: string): string { return type + '__' + id; }
