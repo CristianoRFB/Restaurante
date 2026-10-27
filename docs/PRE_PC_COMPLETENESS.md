@@ -16,20 +16,20 @@ Não confundir a maturidade do site Baru (single-tenant legado) com a prontidão
 | 4 | CRUD catálogo demo por tenant | `shared/food-tenant-domain.ts`, repository, Rules/unit tests | CODE_COMPLETE demo | 1 |
 | 5 | Login por tenant e prévia de catálogo | `app/t/[slug]/login/page.tsx`, `app/t/[slug]/page.tsx` — falta E2E | PARTIAL | 0,5 |
 | 6 | Resolver tenant seguro no Worker | `shared/food-worker-tenant.ts`, `app/api/t/[slug]/context/route.ts`, unitário; falta conectar writes | PARTIAL | 0,5 |
-| 7 | Migração Baru idempotente DRY_RUN / rollback | Sem utilitário verificado | MISSING | 0 |
+| 7 | Migração legado para tenants com DRY_RUN/rollback | `shared/food-legacy-migration.ts`, CLI e testes no Emulator; somente cardápio e mesas sintéticos, sem dados reais | PARTIAL | 0,5 |
 | 8 | Orders por tenant, preço servidor/idempotência | `app/api/t/[slug]/orders/route.ts`, `shared/food-demo-order.ts`, `tests/food-worker-firestore.integration.test.ts` (Emulator); falta checkout real, rate limit KV e E2E Auth | PARTIAL | 0,5 |
 | 9 | Reservas/QR/locks tenant-aware | `app/api/t/[slug]/reservations/route.ts`, `shared/food-demo-reservation.ts`, `app/t/[slug]/tables`, `app/t/[slug]/reservations`, REST Emulator + Rules; reserva comercial e E2E browser pendentes | PARTIAL | 0,5 |
-| 10 | Caixa/finanças e módulos admin tenant-aware | CRUD legado não é isolado por tenant | MISSING SaaS | 0 |
+| 10 | Caixa/finanças e módulos admin tenant-aware | `app/t/[slug]/finance/page.tsx`, resumo de pedidos simulados, Rules por CASHIER/MANAGER; caixa/recebimento/fechamento reais faltam | PARTIAL | 0,5 |
 | 11 | White-label além de nome/tagline/cor | Branding demo mínimo | PARTIAL | 0,5 |
 | 12 | E2E A/B navegador/Worker/KV + visuais verificados | CI atual verifica unit/Rules/build | PARTIAL | 0,5 |
 
-**Medição fixa:** 7 / 12 = **58,3% de cobertura ponderada** destes itens, NÃO grau de prontidão para produção. Não declarar 95% sem evidência.
+**Medição fixa:** 8 / 12 = **66,7% de cobertura ponderada** destes itens, NÃO grau de prontidão para produção. Não declarar 95% sem evidência.
 
 ## NOW F1–F6
 
-- F1 PARTIAL: manter Baru e construir migração reversível.
+- F1 PARTIAL: migração reversível de cardápio/mesas no Emulator com manifesto; faltam migração real autorizada, backups e paridade integral.
 - F2 PARTIAL: lead, demos, roles, catálogo e contexto Worker read-only; mutations ainda não usam TenantContext.
-- F3 PARTIAL SaaS: nova rota de pedidos demo em Emulator com transação/preço servidor; reserva demo com bloqueios atômicos de 90 min foi implementada; caixa, reservas reais e pedidos reais continuam legados.
+- F3 PARTIAL SaaS: nova rota de pedidos demo em Emulator com transação/preço servidor; reserva demo com bloqueios atômicos de 90 min foi implementada; resumo financeiro simulado por tenant; caixa, reservas reais e pedidos reais continuam legados.
 - F4 MISSING e mantido fora do CORE_FIRST: Global Standard depois de isolamento backend.
 - F5 PARTIAL: telas demo privadas, demais módulos ainda não tenantizados.
 - F6 PARTIAL: CI verifica regras/compilação; falta E2E funcional e QA móvel.

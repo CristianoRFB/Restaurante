@@ -30,6 +30,10 @@
 - Mesas DEMO na coleção `tenants/{tenantId}/tables` com Security Rules de acesso por tenant e CRUD gestor. Seed sintético A/B inclui mesas. Não executado em Firebase real.
 - QR/checkout/reservas ainda não passaram por E2E autenticado no navegador. Reserva real, horários configuráveis, cancelamento, conflitos de fuso/horário de verão, pagamentos, atendimento e caixas continuam pendentes.
 
+- F1 migração limitada e reversível: `scripts/migrate-food-legacy.mts` (DRY_RUN por padrão), `shared/food-legacy-migration.ts`, manifesto SHA-256, transações por documento, preflight anti-sobrescrita e rollback com detecção de drift. Suíte Emulator verifica reaplicação, isolamento A×B e manutenção da origem. Não lê produção ou transfere dados pessoais.
+- F3 financeiro apenas DEMO: `/t/[slug]/finance` soma pedidos simulados (não pagamentos). Firestore Rules só permitem listagem a caixa, gerência, administrador/dono e Platform Owner; acesso cruzado e papel SERVICE negados. Não há recebimento, conciliação, estorno ou fechamento.
+- Checkpoint de escopo: `docs/PRE_PC_COMPLETENESS.md` atualizado para **8 / 12 = 66,7%** somente de contratos técnicos; não significa que Food esteja pronto para produção.
+
 ## Next required implementation in the same GOAL
 
 1. Attach the `tenants` resolver to public/admin routes using trusted context.
