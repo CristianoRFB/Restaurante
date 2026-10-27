@@ -15,7 +15,7 @@
     "lint": "oxlint app components lib shared tests scripts vitest.config.ts vite.config.ts",
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --config vitest.config.ts --exclude tests/firestore.rules.test.ts --exclude tests/food-platform.rules.test.ts --exclude tests/food-worker-firestore.integration.test.ts",
+    "test": "vitest run --config vitest.config.ts --exclude tests/firestore.rules.test.ts --exclude tests/food-platform.rules.test.ts --exclude tests/food-worker-firestore.integration.test.ts --exclude tests/food-legacy-migration.integration.test.ts",
     "test:domain": "vitest run --config vitest.config.ts tests/baru-domain.test.ts tests/baru-data.test.ts tests/order-domain.test.ts",
     "test:rules": "node scripts/test-rules.mjs",
     "test:e2e": "playwright test",
@@ -27,7 +27,8 @@
     "build:vinext": "vinext build",
     "start:vinext": "wrangler dev --config dist/server/wrangler.json",
     "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json",
-    "seed:food:demo": "node --experimental-strip-types scripts/seed-food-demo.mts"
+    "seed:food:demo": "node --experimental-strip-types scripts/seed-food-demo.mts",
+    "migrate:food:legacy": "node --experimental-strip-types scripts/migrate-food-legacy.mts"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
