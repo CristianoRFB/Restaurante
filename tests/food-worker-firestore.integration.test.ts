@@ -44,15 +44,22 @@ describe('Firestore Emulator — transação REST de pedido multi-tenant', () =>
   });
   it('salva documento completo, lê novamente e aplica precondição de criação única', async () => {
     const id = 'demoorder_' + crypto.randomUUID().replace(/-/g, '').slice(0, 24);
+    console.info('demo-tx: starting first transaction');
     const first = await beginFoodDemoTransaction();
+    console.info('demo-tx: first transaction started');
     expect(await getFoodTxDocument(['tenants', 'restaurante-demo', 'orders', id], first)).toBeNull();
+    console.info('demo-tx: committing order');
     await createFoodTxOrder(order(id), first);
+    console.info('demo-tx: order committed');
 
+    console.info('demo-tx: opening read transaction');
     const read = await beginFoodDemoTransaction();
+    console.info('demo-tx: reading committed order');
     const saved = await getFoodTxDocument(['tenants', 'restaurante-demo', 'orders', id], read);
     expect(saved).toMatchObject({ id, tenantId: 'restaurante-demo', subtotalCents: 3198, demoOnly: true, paymentRequired: false });
     await rollbackFoodDemoTransaction(read);
 
+    console.info('demo-tx: opening conflict transaction');
     const second = await beginFoodDemoTransaction();
     await expect(createFoodTxOrder(order(id), second)).rejects.toBeInstanceOf(FoodFirestoreConflict);
     await rollbackFoodDemoTransaction(second);
