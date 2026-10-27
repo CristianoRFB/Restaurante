@@ -18,6 +18,15 @@ export interface FoodLead {
   demoTenantId?: string;
 }
 
+export interface FoodDemoBranding {
+  name: string;
+  tagline: string;
+  primaryColor: string;
+  backgroundColor?: string;
+  accentColor?: string;
+  fontPreset?: 'system' | 'serif' | 'rounded';
+}
+
 export interface FoodDemoTenant {
   id: string;
   slug: string;
@@ -27,7 +36,7 @@ export interface FoodDemoTenant {
   subscriptionStatus: 'demo';
   planId: 'PREMIUM_DEMO';
   publiclyListed: false;
-  branding: { name: string; tagline: string; primaryColor: string };
+  branding: FoodDemoBranding;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,6 +81,9 @@ export function newFoodDemoTenant(lead: FoodLead, now: string): FoodDemoTenant {
       name: 'Restaurante — Demonstração',
       tagline: 'Ambiente fictício de apresentação; não é o sistema oficial do estabelecimento.',
       primaryColor: '#315742',
+      backgroundColor: '#FFFFFF',
+      accentColor: '#F3E5CD',
+      fontPreset: 'system',
     },
     createdAt: now, updatedAt: now,
   };

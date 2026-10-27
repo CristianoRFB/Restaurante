@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterAll, beforeAll, describe, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { newFoodDemoTenant, newFoodLead } from '@/shared/food-platform-domain';
@@ -128,6 +128,24 @@ describe('Food Platform: Rules tenant-aware (aditivas ao legado)', () => {
     await assertFails(getDocs(collection(cashier, `tenants/${demoB.id}/orders`)));
     await assertFails(setDoc(doc(cashier, `tenants/${demoA.id}/orders/fake`), { id:'fake',subtotalCents:1 }));
     await assertSucceeds(getDocs(collection(platform, `tenants/${demoB.id}/orders`)));
+  });
+  it('white-label: tenant_owner edita somente identidade privada de A, sem status, lead, plano ou branding de B', async () => {
+    const a = env.authenticatedContext('ownerA').firestore();
+    const b = env.authenticatedContext('staffB').firestore();
+    const manager = env.authenticatedContext('staffA').firestore();
+    const tenantPath = doc(a,'tenants',demoA.id);
+    const brand = { name:'Loja Fictícia A',tagline:'Somente demonstração',primaryColor:'#222222',
+      backgroundColor:'#FFFFFF',accentColor:'#BBCCDD',fontPreset:'serif' };
+    await assertSucceeds(updateDoc(tenantPath,{branding:brand,updatedAt:'2026-10-28T09:00:00.000Z'}));
+    await assertFails(updateDoc(doc(manager,'tenants',demoA.id),{branding:{...brand,name:'Gestor não pode'},updatedAt:'2026-10-28T10:00:00.000Z'}));
+    await assertFails(updateDoc(doc(b,'tenants',demoA.id),{branding:brand,updatedAt:'2026-10-28T10:00:00.000Z'}));
+    await assertFails(updateDoc(tenantPath,{status:'SUSPENDED',updatedAt:'2026-10-28T10:00:00.000Z'}));
+    await assertFails(updateDoc(tenantPath,{planId:'PAID',updatedAt:'2026-10-28T10:00:00.000Z'}));
+    await assertFails(updateDoc(tenantPath,{publiclyListed:true,updatedAt:'2026-10-28T10:00:00.000Z'}));
+    await assertFails(updateDoc(tenantPath,{branding:{...brand,backgroundColor:'javascript:alert(1)'},updatedAt:'2026-10-28T10:00:00.000Z'}));
+    await assertFails(updateDoc(doc(a,'tenants',demoB.id),{branding:brand,updatedAt:'2026-10-28T10:00:00.000Z'}));
+    const snap=await getDoc(tenantPath);
+    expect(snap.data()?.branding).toMatchObject(brand);
   });
   it('suspensão impede operações de staff, mas mantém governança plataforma', async () => {
     const owner = env.authenticatedContext('owner').firestore();

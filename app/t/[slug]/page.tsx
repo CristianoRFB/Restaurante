@@ -36,8 +36,16 @@ export default function PrivateFoodDemo({ params }: { params: { slug: string } }
     <p><strong>DEMONSTRAÇÃO INTERNA • NÃO É SISTEMA OFICIAL DE QUALQUER ESTABELECIMENTO</strong></p>
     {loading ? <p role="status">Carregando catálogo…</p> : !context ?
       <section><h1>Prévia indisponível</h1><p role="alert">{message}</p><p><a href={`/t/${encodeURIComponent(params.slug)}/login`}>Entrar com conta autorizada</a></p></section> :
-      <><header style={{ borderTop: '6px solid ' + context.tenant.branding.primaryColor, paddingTop: 16 }}>
+      <><header style={{
+        borderTop: '6px solid ' + context.tenant.branding.primaryColor, padding:16,
+        backgroundColor: context.tenant.branding.backgroundColor ?? '#FFFFFF',
+        color: context.tenant.branding.primaryColor,
+        fontFamily: context.tenant.branding.fontPreset === 'serif' ? 'Georgia,serif'
+          : context.tenant.branding.fontPreset === 'rounded' ? 'Trebuchet MS,sans-serif' : 'system-ui,sans-serif',
+        borderRadius:12,
+      }}>
         <h1>{context.tenant.branding.name}</h1><p>{context.tenant.branding.tagline}</p>
+        {context.tenant.branding.accentColor && <div aria-hidden="true" style={{width:120,height:6,borderRadius:6,backgroundColor:context.tenant.branding.accentColor}}/>}
         <p><strong>{context.tenant.status === 'SUSPENDED' ? 'Suspensa' : 'Prévia privada'}</strong></p>
       </header>
         {context.tenant.status === 'SUSPENDED' ? <p>Esta demonstração está suspensa.</p> :

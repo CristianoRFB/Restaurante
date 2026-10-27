@@ -90,6 +90,7 @@ export default function TenantDemoAdmin({ params }: { params: { slug: string } }
       {(ctx.isPlatformOwner || (ctx.membership?.active && ['tenant_owner','ADMIN','MANAGER','CASHIER'].includes(ctx.membership.role))) &&
         <> | <a href={`/t/${encodeURIComponent(ctx.tenant.slug)}/finance`}>Resumo financeiro DEMO</a></>}
     </p>
+    {ctx.canManageMembers && <p><a href={`/t/${encodeURIComponent(ctx.tenant.slug)}/branding`}>Editar marca da demonstração</a> (apenas uso privado)</p>}
     <p role="status" aria-live="polite">{message}</p>
     {ctx.tenant.status === 'SUSPENDED' && <p role="alert">Tenant suspenso. Alterações estão indisponíveis.</p>}
 
