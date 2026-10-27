@@ -50,14 +50,29 @@ function decodeValue(value: FirestoreValue): unknown {
   return null;
 }
 export async function getPrivateFoodDocument(segments: string[]): Promise<Record<string, unknown> | null> {
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
+  const emulatorMode = process.env.FOOD_DEMO_ORDERS_MODE === 'emulator';
+  const projectId = emulatorMode
+    ? process.env.FIREBASE_PROJECT_ID || ''
+    : process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
   if (!/^[a-zA-Z0-9_-]{3,100}$/.test(projectId)) throw new Error('Projeto Firebase não configurado.');
   if (segments.length < 2 || segments.length % 2 !== 0 || segments.some((segment) => !/^[a-zA-Z0-9_-]{1,128}$/.test(segment))) {
     throw new Error('Caminho Firestore inválido.');
   }
   const path = segments.map(encodeURIComponent).join('/');
-  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${path}`;
-  const response = await fetch(url, { headers: { authorization: 'Bearer ' + await serviceToken() }, signal: AbortSignal.timeout(10_000) });
+  let url: string;
+  let auth: string;
+  if (emulatorMode) {
+    const host = process.env.FIRESTORE_EMULATOR_HOST || '';
+    if (!/^demo-[a-z0-9-]+$/.test(projectId) || !/^(127\.0\.0\.1|localhost):[0-9]{2,5}$/.test(host)) {
+      throw new Error('Demo só permite Firestore Emulator local com projeto demo-.');
+    }
+    url = 'http://' + host + '/v1/projects/' + projectId + '/databases/(default)/documents/' + path;
+    auth = 'Bearer owner'; // Magic admin token is confined to a validated loopback emulator.
+  } else {
+    url = 'https://firestore.googleapis.com/v1/projects/' + projectId + '/databases/(default)/documents/' + path;
+    auth = 'Bearer ' + await serviceToken();
+  }
+  const response = await fetch(url, { headers: { authorization: auth }, signal: AbortSignal.timeout(10_000) });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error('Leitura privada de documento Firebase indisponível.');
   const body = await response.json() as FirestoreResponse;
