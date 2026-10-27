@@ -20,8 +20,8 @@ Não confundir a maturidade do site Baru (single-tenant legado) com a prontidão
 | 8 | Orders por tenant, preço servidor/idempotência | `app/api/t/[slug]/orders/route.ts`, `shared/food-demo-order.ts`, `tests/food-worker-firestore.integration.test.ts` (Emulator); falta checkout real, rate limit KV e E2E Auth | PARTIAL | 0,5 |
 | 9 | Reservas/QR/locks tenant-aware | `app/api/t/[slug]/reservations/route.ts`, `shared/food-demo-reservation.ts`, `app/t/[slug]/tables`, `app/t/[slug]/reservations`, REST Emulator + Rules; reserva comercial e E2E browser pendentes | PARTIAL | 0,5 |
 | 10 | Caixa/finanças e módulos admin tenant-aware | `app/t/[slug]/finance/page.tsx`, resumo de pedidos simulados, Rules por CASHIER/MANAGER; caixa/recebimento/fechamento reais faltam | PARTIAL | 0,5 |
-| 11 | White-label além de nome/tagline/cor | Branding demo mínimo | PARTIAL | 0,5 |
-| 12 | E2E A/B navegador/Worker/KV + visuais verificados | CI atual verifica unit/Rules/build | PARTIAL | 0,5 |
+| 11 | White-label além de nome/tagline/cor | `app/t/[slug]/branding/page.tsx`, validação de cores/fonte, tema de prévia e Rules owner-only; faltam domínios, imagens/licenças e telas completas | PARTIAL | 0,5 |
+| 12 | E2E A/B navegador/Worker/KV + visuais verificados | CI cobre Auth+Firestore Emulator e endpoints HTTP reais com token; ainda faltam browser E2E, Worker/KV remoto e screenshots de tela real | PARTIAL | 0,5 |
 
 **Medição fixa:** 8 / 12 = **66,7% de cobertura ponderada** destes itens, NÃO grau de prontidão para produção. Não declarar 95% sem evidência.
 
@@ -36,7 +36,7 @@ Não confundir a maturidade do site Baru (single-tenant legado) com a prontidão
 
 ## Próximo código prioritário
 
-Integrar a autenticação do Worker ao Auth Emulator em teste de ponta a ponta; validar a UI em browser. Em seguida, preservar algoritmos legados e portar pedidos, reservas, locks/idempotência e KV para tenant A/B com testes negativos e de concorrência. Não ligar checkout demo ou deploy até a fronteira passar testes de integração.
+Autenticação HTTP validada nos Emulators; implementar E2E autenticado no navegador, captura real das telas e testes de Worker/KV sob concorrência. Em seguida, preservar algoritmos legados e portar pedidos, reservas, locks/idempotência e KV para tenant A/B com testes negativos e de concorrência. Não ligar checkout demo ou deploy até a fronteira passar testes de integração.
 
 ## Provas e segurança
 

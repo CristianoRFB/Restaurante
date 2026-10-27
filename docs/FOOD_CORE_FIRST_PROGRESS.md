@@ -34,6 +34,10 @@
 - F3 financeiro apenas DEMO: `/t/[slug]/finance` soma pedidos simulados (não pagamentos). Firestore Rules só permitem listagem a caixa, gerência, administrador/dono e Platform Owner; acesso cruzado e papel SERVICE negados. Não há recebimento, conciliação, estorno ou fechamento.
 - Checkpoint de escopo: `docs/PRE_PC_COMPLETENESS.md` atualizado para **8 / 12 = 66,7%** somente de contratos técnicos; não significa que Food esteja pronto para produção.
 
+- Autenticação e operações HTTP autenticadas testadas com Auth Emulator + Firestore Emulator no mesmo CI: `tests/food-worker-http.integration.test.ts` chama diretamente as rotas `/api/t/[slug]/context`, `orders` e `reservations` com tokens reais do Auth Emulator. Nega 401/403, membro revogado, tenant A×B, adulteração de preço/tenant, colisão de horário e suspensão. Não é E2E de browser nem prova de deploy.
+- Branding white-label **privado** por tenant: `/t/[slug]/branding`, `shared/food-demo-branding.ts` e Rules. Nome, tagline, cor principal, cor de fundo, cor de detalhe e estilo tipográfico; `tenant_owner` só altera `branding` e `updatedAt`, nunca contrato, plano, lead, slug, suspensão ou publicação; testes Rules e unitários no CI #40583424818.
+- Continua proibido copiar logotipos/contatos ou publicar identidade visual do prospect Baru como se tivesse autorizado; status comercial segue NOT_SIGNED.
+
 ## Next required implementation in the same GOAL
 
 1. Attach the `tenants` resolver to public/admin routes using trusted context.
