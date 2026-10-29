@@ -35,13 +35,16 @@ export default function TenantDemoLoginPage({ params }: { params: { slug: string
     event.preventDefault();
     if (busy) return;
     setMessage(''); setBusy(true);
+    let stage: 'auth' | 'tenant' = 'auth';
     try {
       if (!firebaseAuth || !firebaseConfigured || !isFirebaseDataMode()) throw new Error('Firebase indisponível.');
       await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
       setPassword('');
+      stage = 'tenant';
       await verifyAndEnter();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível autenticar.');
+      const detail = error instanceof Error ? error.message : 'Ocorreu uma falha.';
+      setMessage(stage === 'auth' ? 'Falha na autenticação Firebase: ' + detail : 'Falha na autorização do tenant: ' + detail);
     } finally { setBusy(false); }
   }
 
