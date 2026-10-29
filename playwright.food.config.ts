@@ -16,9 +16,11 @@ export default defineConfig({
   },
   webServer: {
     command: 'npm run dev:vinext -- --host 127.0.0.1',
-    url: 'http://127.0.0.1:3001/t/food-browser-a-demo/login',
+    port: 3001,
+    stdout: 'pipe',
+    stderr: 'pipe',
     reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
+    timeout: 90_000,
     env: {
       ...process.env,
       NEXT_PUBLIC_DATA_MODE: 'firebase',
