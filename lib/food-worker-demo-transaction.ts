@@ -1,3 +1,4 @@
+import { foodWorkerVar } from '@/lib/food-worker-env';
 import type { FoodDemoOrderStore, FoodDemoOrder } from '@/shared/food-demo-order';
 import type { FoodDemoTenant } from '@/shared/food-platform-domain';
 import type { FoodTenantMembership, FoodTenantMenuItem } from '@/shared/food-tenant-domain';
@@ -14,15 +15,15 @@ export class FoodFirestoreConflict extends Error {}
 const safeSegment = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function firestoreRoot(): string {
-  const project = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
+  const project = foodWorkerVar('FIREBASE_PROJECT_ID') || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
   if (!/^demo-[a-z0-9-]+$/.test(project)) throw new Error('Pedidos demo exigem projeto Firebase demo-.');
-  const emulator = process.env.FIRESTORE_EMULATOR_HOST || '';
+  const emulator = foodWorkerVar('FIRESTORE_EMULATOR_HOST') || '';
   if (!/^(127\.0\.0\.1|localhost):[0-9]{2,5}$/.test(emulator)) throw new Error('Pedidos demo exigem Firestore Emulator local.');
   return 'http://' + emulator + '/v1/projects/' + project + '/databases/(default)/documents';
 }
 export function foodDemoOrdersEnabled(): boolean {
   try {
-    return process.env.FOOD_DEMO_ORDERS_MODE === 'emulator' && Boolean(firestoreRoot());
+    return foodWorkerVar('FOOD_DEMO_ORDERS_MODE') === 'emulator' && Boolean(firestoreRoot());
   } catch { return false; }
 }
 function path(segments: string[]): string {

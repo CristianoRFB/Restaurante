@@ -35,7 +35,21 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
+  const enableLocalFoodEmulator = command === 'serve'
+    && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true'
+    && process.env.FOOD_DEMO_ORDERS_MODE === 'emulator'
+    && /^(127\\.0\\.0\\.1|localhost):[0-9]{2,5}$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')
+    && /^(127\\.0\\.0\\.1|localhost):[0-9]{2,5}$/.test(process.env.FIREBASE_AUTH_EMULATOR_HOST || '')
+    && /^demo-[a-z0-9-]+$/.test(process.env.FIREBASE_PROJECT_ID || '');
+  const foodDemoVars = enableLocalFoodEmulator ? {
+    FOOD_DEMO_ORDERS_MODE: 'emulator',
+    FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST || '',
+    FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST || '',
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || '',
+    NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
+  } : {};
+
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= 'false';
@@ -53,7 +67,7 @@ export default defineConfig(() => {
       sites(),
       cloudflare({
         viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
-        config: localBindingConfig,
+        config: { ...localBindingConfig, vars: foodDemoVars },
       }),
     ],
   };

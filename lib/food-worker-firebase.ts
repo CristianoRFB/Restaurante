@@ -1,3 +1,4 @@
+import { foodWorkerVar } from '@/lib/food-worker-env';
 import { env } from 'cloudflare:workers';
 
 type FirestoreValue = { stringValue?: string; integerValue?: string; booleanValue?: boolean; mapValue?: { fields?: Record<string, FirestoreValue> }; arrayValue?: { values?: FirestoreValue[] }; nullValue?: string };
@@ -50,9 +51,9 @@ function decodeValue(value: FirestoreValue): unknown {
   return null;
 }
 export async function getPrivateFoodDocument(segments: string[]): Promise<Record<string, unknown> | null> {
-  const emulatorMode = process.env.FOOD_DEMO_ORDERS_MODE === 'emulator';
+  const emulatorMode = foodWorkerVar('FOOD_DEMO_ORDERS_MODE') === 'emulator';
   const projectId = emulatorMode
-    ? process.env.FIREBASE_PROJECT_ID || ''
+    ? foodWorkerVar('FIREBASE_PROJECT_ID') || ''
     : process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
   if (!/^[a-zA-Z0-9_-]{3,100}$/.test(projectId)) throw new Error('Projeto Firebase não configurado.');
   if (segments.length < 2 || segments.length % 2 !== 0 || segments.some((segment) => !/^[a-zA-Z0-9_-]{1,128}$/.test(segment))) {
@@ -62,7 +63,7 @@ export async function getPrivateFoodDocument(segments: string[]): Promise<Record
   let url: string;
   let auth: string;
   if (emulatorMode) {
-    const host = process.env.FIRESTORE_EMULATOR_HOST || '';
+    const host = foodWorkerVar('FIRESTORE_EMULATOR_HOST') || '';
     if (!/^demo-[a-z0-9-]+$/.test(projectId) || !/^(127\.0\.0\.1|localhost):[0-9]{2,5}$/.test(host)) {
       throw new Error('Demo só permite Firestore Emulator local com projeto demo-.');
     }
@@ -83,11 +84,11 @@ export class FoodWorkerAuthError extends Error {}
 export async function verifyFoodFirebaseBearer(request: Request): Promise<string> {
   const authorization = request.headers.get('authorization') || '';
   if (!authorization.startsWith('Bearer ') || authorization.length > 5000) throw new FoodWorkerAuthError('Token ausente.');
-  const key = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '';
+  const key = foodWorkerVar('NEXT_PUBLIC_FIREBASE_API_KEY') || '';
   if (!key) throw new Error('Firebase Auth não configurado no Worker.');
   // Local demo tokens must NEVER be sent to the production Google Identity Toolkit.
-  const emulatorMode = process.env.FOOD_DEMO_ORDERS_MODE === 'emulator';
-  const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
+  const emulatorMode = foodWorkerVar('FOOD_DEMO_ORDERS_MODE') === 'emulator';
+  const emulatorHost = foodWorkerVar('FIREBASE_AUTH_EMULATOR_HOST') || '127.0.0.1:9099';
   if (emulatorMode && !/^(127\.0\.0\.1|localhost):[0-9]{2,5}$/.test(emulatorHost)) {
     throw new FoodWorkerAuthError('Auth Emulator host inválido.');
   }
