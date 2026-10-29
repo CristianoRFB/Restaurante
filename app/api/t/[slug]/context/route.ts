@@ -1,11 +1,12 @@
 import { FoodTenantAccessError, resolveTrustedFoodWorkerContext } from '@/shared/food-worker-tenant';
 import { FoodWorkerAuthError, getPrivateFoodDocument, verifyFoodFirebaseBearer } from '@/lib/food-worker-firebase';
 
-export async function GET(request: Request, { params }: { params: { slug: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   const headers = { 'content-type': 'application/json', 'cache-control': 'no-store, private' };
   try {
+    const { slug } = await params;
     const uid = await verifyFoodFirebaseBearer(request);
-    const context = await resolveTrustedFoodWorkerContext(params.slug, uid, {
+    const context = await resolveTrustedFoodWorkerContext(slug, uid, {
       tenant: async (slug) => (await getPrivateFoodDocument(['tenants', slug])) as Awaited<ReturnType<typeof tenantDocument>> | null,
       platformAdmin: (user) => getPrivateFoodDocument(['platformAdmins', user]),
       member: async (slug, user) => (await getPrivateFoodDocument(['tenants', slug, 'memberships', user])) as Awaited<ReturnType<typeof memberDocument>> | null,

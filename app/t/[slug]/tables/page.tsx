@@ -1,4 +1,6 @@
 'use client';
+
+import { useParams } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
@@ -8,8 +10,9 @@ import { resolveFoodTenant } from '@/lib/food-tenant-repository';
 import type { FoodDemoTable } from '@/shared/food-demo-reservation';
 import type { FoodTenantContext } from '@/shared/food-tenant-domain';
 
-export default function FoodDemoTables({ params }: { params:{slug:string} }) {
-  const slug=params.slug;
+export default function FoodDemoTables() {
+  const slug = useParams<{ slug: string }>().slug;
+
   const [ctx,setCtx]=useState<FoodTenantContext|null>(null);
   const [tables,setTables]=useState<FoodDemoTable[]>([]);
   const [error,setError]=useState('Verificando acesso…');

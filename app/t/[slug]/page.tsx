@@ -1,12 +1,15 @@
 'use client';
 
+import { useParams } from 'next/navigation';
+
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { firebaseAuth, isFirebaseDataMode } from '@/lib/firebase-client';
 import { listFoodTenantMenuItems, resolveFoodTenant } from '@/lib/food-tenant-repository';
 import type { FoodTenantContext, FoodTenantMenuItem } from '@/shared/food-tenant-domain';
 
-export default function PrivateFoodDemo({ params }: { params: { slug: string } }) {
+export default function PrivateFoodDemo() {
+  const slug = useParams<{ slug: string }>().slug;
   const [context, setContext] = useState<FoodTenantContext | null>(null);
   const [items, setItems] = useState<FoodTenantMenuItem[]>([]);
   const [message, setMessage] = useState('Verificando sessão e permissões…');
@@ -21,7 +24,7 @@ export default function PrivateFoodDemo({ params }: { params: { slug: string } }
       setContext(null); setItems([]); setLoading(true);
       if (!user) { setMessage('Você precisa entrar antes de visualizar uma demonstração privada.'); setLoading(false); return; }
       try {
-        const tenantContext = await resolveFoodTenant(params.slug);
+        const tenantContext = await resolveFoodTenant(slug);
         const catalog = await listFoodTenantMenuItems(tenantContext);
         if (active) { setContext(tenantContext); setItems(catalog.filter((item) => item.active)); setMessage(''); }
       } catch {
@@ -29,13 +32,13 @@ export default function PrivateFoodDemo({ params }: { params: { slug: string } }
       } finally { if (active) setLoading(false); }
     });
     return () => { active = false; unsubscribe(); };
-  }, [params.slug]);
+  }, [slug]);
 
   const shell = { maxWidth: 940, margin: '2rem auto', padding: 24, fontFamily: 'system-ui,sans-serif', lineHeight: 1.5 } as const;
   return <main style={shell}>
     <p><strong>DEMONSTRAÇÃO INTERNA • NÃO É SISTEMA OFICIAL DE QUALQUER ESTABELECIMENTO</strong></p>
     {loading ? <p role="status">Carregando catálogo…</p> : !context ?
-      <section><h1>Prévia indisponível</h1><p role="alert">{message}</p><p><a href={`/t/${encodeURIComponent(params.slug)}/login`}>Entrar com conta autorizada</a></p></section> :
+      <section><h1>Prévia indisponível</h1><p role="alert">{message}</p><p><a href={`/t/${encodeURIComponent(slug)}/login`}>Entrar com conta autorizada</a></p></section> :
       <><header style={{
         borderTop: '6px solid ' + context.tenant.branding.primaryColor, padding:16,
         backgroundColor: context.tenant.branding.backgroundColor ?? '#FFFFFF',

@@ -1,5 +1,7 @@
 'use client';
 
+import { useParams } from 'next/navigation';
+
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState, type FormEvent } from 'react';
 import { firebaseAuth } from '@/lib/firebase-client';
@@ -10,7 +12,8 @@ import type { TenantRole } from '@/shared/food-platform-domain';
 const shell = { margin: '24px auto', maxWidth: 980, padding: '12px 20px', fontFamily: 'system-ui, sans-serif', lineHeight: 1.55 } as const;
 const blank = { name: '', description: '', categoryId: '', priceReais: '', active: true };
 
-export default function TenantDemoAdmin({ params }: { params: { slug: string } }) {
+export default function TenantDemoAdmin() {
+  const slug = useParams<{ slug: string }>().slug;
   const [ctx, setCtx] = useState<FoodTenantContext | null>(null);
   const [items, setItems] = useState<FoodTenantMenuItem[]>([]);
   const [members, setMembers] = useState<FoodTenantMembership[]>([]);
@@ -30,7 +33,7 @@ export default function TenantDemoAdmin({ params }: { params: { slug: string } }
       setLoading(true); setCtx(null); setItems([]); setMembers([]);
       if (!user) { setMessage('Faça login na plataforma antes de acessar a gestão.'); setLoading(false); return; }
       try {
-        const next = await resolveFoodTenant(params.slug);
+        const next = await resolveFoodTenant(slug);
         const [catalog, staff] = await Promise.all([
           listFoodTenantMenuItems(next),
           next.canManageMembers ? listFoodTenantMembers(next) : Promise.resolve([]),
@@ -41,7 +44,7 @@ export default function TenantDemoAdmin({ params }: { params: { slug: string } }
       } finally { if (mounted) setLoading(false); }
     });
     return () => { mounted = false; stop(); };
-  }, [params.slug]);
+  }, [slug]);
 
   async function act(action: (context: FoodTenantContext) => Promise<void>) {
     if (!ctx || busy) return;
@@ -80,7 +83,7 @@ export default function TenantDemoAdmin({ params }: { params: { slug: string } }
   }
 
   if (loading) return <main style={shell}><h1>Admin do tenant</h1><p role="status">Carregando permissões e dados…</p></main>;
-  if (!ctx) return <main style={shell}><h1>Acesso restrito</h1><p role="alert">{message}</p><p><a href={`/t/${encodeURIComponent(params.slug)}/login`}>Entrar ou trocar conta</a></p></main>;
+  if (!ctx) return <main style={shell}><h1>Acesso restrito</h1><p role="alert">{message}</p><p><a href={`/t/${encodeURIComponent(slug)}/login`}>Entrar ou trocar conta</a></p></main>;
 
   return <main style={shell}>
     <p><strong>DEMONSTRAÇÃO INTERNA — NÃO É O SISTEMA OFICIAL DE QUALQUER RESTAURANTE.</strong></p>

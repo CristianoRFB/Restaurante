@@ -21,8 +21,8 @@ export interface FoodTenantContext {
   canManageMembers: boolean;
 }
 
-export function validFoodTenantSlug(slug: string): boolean {
-  return /^[a-z][a-z0-9-]{2,62}$/.test(slug) && !slug.includes('--');
+export function validFoodTenantSlug(slug: unknown): slug is string {
+  return typeof slug === 'string' && /^[a-z][a-z0-9-]{2,62}$/.test(slug) && !slug.includes('--');
 }
 
 export function canManageFoodCatalog(role: TenantRole | null): boolean {

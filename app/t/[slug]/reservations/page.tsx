@@ -1,4 +1,6 @@
 'use client';
+
+import { useParams } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { firebaseAuth } from '@/lib/firebase-client';
@@ -8,8 +10,9 @@ import type { FoodDemoTable } from '@/shared/food-demo-reservation';
 import type { FoodTenantContext } from '@/shared/food-tenant-domain';
 
 interface Receipt { id:string; tenantId:string;tableId:string;date:string;time:string;status:string;created:boolean;demoOnly:boolean; }
-export default function FoodDemoReservationPage({params}:{params:{slug:string}}){
-  const slug=params.slug;
+export default function FoodDemoReservationPage() {
+  const slug = useParams<{ slug: string }>().slug;
+
   const [ctx,setCtx]=useState<FoodTenantContext|null>(null);
   const [tables,setTables]=useState<FoodDemoTable[]>([]);
   const [tableId,setTableId]=useState('');

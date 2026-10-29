@@ -1,5 +1,7 @@
 'use client';
 
+import { useParams } from 'next/navigation';
+
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { firebaseAuth, isFirebaseDataMode } from '@/lib/firebase-client';
@@ -20,7 +22,8 @@ function usableCart(raw: unknown): Record<string, number> {
   }).slice(0, 25)) as Record<string, number>;
 }
 
-export default function FoodDemoCheckout({ params }: { params: { slug: string } }) {
+export default function FoodDemoCheckout() {
+  const slug = useParams<{ slug: string }>().slug;
   const [ctx, setCtx] = useState<FoodTenantContext | null>(null);
   const [catalog, setCatalog] = useState<FoodTenantMenuItem[]>([]);
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -28,7 +31,7 @@ export default function FoodDemoCheckout({ params }: { params: { slug: string } 
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<OrderReceipt | null>(null);
   const requestId = useRef('');
-  const slug = params.slug;
+
 
   useEffect(() => {
     const auth = firebaseAuth;

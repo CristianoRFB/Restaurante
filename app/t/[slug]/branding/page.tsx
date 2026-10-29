@@ -1,5 +1,7 @@
 'use client';
 
+import { useParams } from 'next/navigation';
+
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState, type FormEvent } from 'react';
 import { firebaseAuth } from '@/lib/firebase-client';
@@ -12,7 +14,8 @@ const defaults: FoodDemoBranding = {
   name:'Restaurante — Demonstração', tagline:'Ambiente fictício, sem vínculo comercial.',
   primaryColor:'#315742', backgroundColor:'#FFFFFF', accentColor:'#F3E5CD', fontPreset:'system',
 };
-export default function FoodDemoBrandingPage({params}:{params:{slug:string}}){
+export default function FoodDemoBrandingPage() {
+  const slug = useParams<{ slug: string }>().slug;
   const [branding,setBranding]=useState<FoodDemoBranding>(defaults);
   const [authorized,setAuthorized]=useState(false);
   const [busy,setBusy]=useState(false);
@@ -25,17 +28,17 @@ export default function FoodDemoBrandingPage({params}:{params:{slug:string}}){
       setAuthorized(false);
       if(!user){setNotice('Entre com uma conta autorizada.');return;}
       try{
-        const current=await resolveFoodTenant(params.slug);
+        const current=await resolveFoodTenant(slug);
         if(!current.canManageMembers || current.tenant.status!=='DEMO') throw new Error('Acesso restrito ao dono.');
         if(mounted){setBranding(validatedDemoBranding(current.tenant.branding));setAuthorized(true);setNotice('');}
       }catch{if(mounted)setNotice('Somente o dono ou Platform Owner pode personalizar esta demo.');}
     });
     return()=>{mounted=false;stop();};
-  },[params.slug]);
+  },[slug]);
   async function save(e:FormEvent){
     e.preventDefault();if(busy||!authorized)return;
     setBusy(true);setNotice('');
-    try{await saveFoodDemoBranding(params.slug,branding);setNotice('Identidade interna salva com sucesso.');}
+    try{await saveFoodDemoBranding(slug,branding);setNotice('Identidade interna salva com sucesso.');}
     catch(error){setNotice(error instanceof Error?error.message:'Falha ao salvar.');}
     finally{setBusy(false);}
   }
@@ -43,7 +46,7 @@ export default function FoodDemoBrandingPage({params}:{params:{slug:string}}){
   return <main style={shell}>
     <strong>MARCA FICTÍCIA — PRÉVIA PRIVADA, NÃO É SITE OFICIAL DO PROSPECT</strong>
     <h1>Identidade visual do tenant</h1>
-    <p><a href={'/t/'+encodeURIComponent(params.slug)+'/admin'}>Voltar ao admin</a></p>
+    <p><a href={'/t/'+encodeURIComponent(slug)+'/admin'}>Voltar ao admin</a></p>
     {!authorized?<p role="status">{notice}</p>:<>
       <form onSubmit={save} style={{display:'grid',gap:14,maxWidth:500}}>
         <label>Nome da demo <input required minLength={3} maxLength={120} value={branding.name} onChange={e=>setBranding(v=>({...v,name:e.target.value}))}/></label>

@@ -1,13 +1,16 @@
 'use client';
 
+import { useParams } from 'next/navigation';
+
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEffect, useState, type FormEvent } from 'react';
 import { firebaseAuth, firebaseConfigured, isFirebaseDataMode } from '@/lib/firebase-client';
 import { resolveFoodTenant } from '@/lib/food-tenant-repository';
 import { validFoodTenantSlug } from '@/shared/food-tenant-domain';
 
-export default function TenantDemoLoginPage({ params }: { params: { slug: string } }) {
-  const slug = params.slug;
+export default function TenantDemoLoginPage() {
+  const slug = useParams<{ slug: string }>().slug;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);

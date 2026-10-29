@@ -8,7 +8,7 @@ const headers = { 'content-type': 'application/json', 'cache-control': 'no-store
 function response(status: number, value: Record<string, unknown>): Response {
   return new Response(JSON.stringify(value), { status, headers });
 }
-export async function POST(request: Request, { params }: { params: { slug: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   if (!foodDemoOrdersEnabled()) return response(503, { error: 'Checkout demo desabilitado fora do Emulator.' });
   if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
     return response(415, { error: 'Envie JSON.' });
@@ -17,8 +17,9 @@ export async function POST(request: Request, { params }: { params: { slug: strin
   if (declared > 12_000) return response(413, { error: 'Pedido muito grande.' });
   let transaction: string | undefined;
   try {
+    const { slug } = await params;
     const uid = await verifyFoodFirebaseBearer(request);
-    const limit = await limitFoodDemoRequest(params.slug, uid, 'orders');
+    const limit = await limitFoodDemoRequest(slug, uid, 'orders');
     if (!limit.allowed) {
       return new Response(JSON.stringify({ error: 'Limite de tentativas da demo atingido.' }), {
         status: 429, headers: { ...headers, 'retry-after': String(limit.retryAfterSeconds) },
@@ -28,7 +29,7 @@ export async function POST(request: Request, { params }: { params: { slug: strin
     if (raw.length > 12_000) return response(413, { error: 'Pedido muito grande.' });
     const payload: unknown = JSON.parse(raw);
     transaction = await beginFoodDemoTransaction();
-    const placed = await placeFoodDemoOrder(params.slug, uid, payload, makeFoodDemoTransactionStore(transaction));
+    const placed = await placeFoodDemoOrder(slug, uid, payload, makeFoodDemoTransactionStore(transaction));
     if (!placed.created) await rollbackFoodDemoTransaction(transaction);
     // No payment, customer contact, delivery, reservation, or external notification is triggered.
     return response(placed.created ? 201 : 200, {

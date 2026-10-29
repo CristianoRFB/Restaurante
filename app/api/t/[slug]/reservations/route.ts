@@ -8,14 +8,15 @@ import { limitFoodDemoRequest } from '@/lib/food-worker-rate-limit';
 const headers = { 'content-type': 'application/json', 'cache-control': 'no-store, private' };
 function json(status: number, data: Record<string, unknown>) { return new Response(JSON.stringify(data), { status, headers }); }
 
-export async function POST(request: Request, { params }: { params: { slug: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   if (!foodDemoOrdersEnabled()) return json(503, { error: 'Reservas demo desabilitadas fora do Emulator.' });
   if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) return json(415, { error: 'Envie JSON.' });
   if (Number(request.headers.get('content-length') || '0') > 2048) return json(413, { error: 'Payload grande demais.' });
   let transaction: string | undefined;
   try {
+    const { slug } = await params;
     const uid = await verifyFoodFirebaseBearer(request);
-    const limit = await limitFoodDemoRequest(params.slug, uid, 'reservations');
+    const limit = await limitFoodDemoRequest(slug, uid, 'reservations');
     if (!limit.allowed) {
       return new Response(JSON.stringify({ error: 'Limite de tentativas da demo atingido.' }), {
         status: 429, headers: { ...headers, 'retry-after': String(limit.retryAfterSeconds) },
@@ -25,7 +26,7 @@ export async function POST(request: Request, { params }: { params: { slug: strin
     if (raw.length > 2048) return json(413, { error: 'Payload grande demais.' });
     const payload: unknown = JSON.parse(raw);
     transaction = await beginFoodDemoTransaction();
-    const result = await bookFoodDemoReservation(params.slug, uid, payload, makeFoodReservationTransactionStore(transaction));
+    const result = await bookFoodDemoReservation(slug, uid, payload, makeFoodReservationTransactionStore(transaction));
     if (!result.created) await rollbackFoodDemoTransaction(transaction);
     return json(result.created ? 201 : 200, {
       created: result.created, id: result.reservation.id,
