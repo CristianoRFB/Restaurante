@@ -1,22 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { foodContentSecurityPolicy } from './shared/food-csp';
 
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googleapis.com https://www.google.com/recaptcha/",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://images.unsplash.com https://firebasestorage.googleapis.com https://storage.googleapis.com",
-  "font-src 'self' data:",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.google.com/recaptcha/",
-  "frame-src 'self' https://www.google.com/recaptcha/",
-].join('; ');
-
-export function middleware(_request: NextRequest) {
+export function middleware(request: NextRequest) {
   const response = NextResponse.next();
-  response.headers.set('Content-Security-Policy', contentSecurityPolicy);
+  response.headers.set('Content-Security-Policy', foodContentSecurityPolicy({
+    hostname: request.nextUrl.hostname,
+    nodeEnv: process.env.NODE_ENV,
+    emulatorEnabled: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true',
+    firebaseProjectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  }));
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
