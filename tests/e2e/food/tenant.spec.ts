@@ -33,6 +33,7 @@ async function login(page:Page, slug:string, identity:Identity) {
   await expect(page.getByRole('heading',{name:/^Admin:/})).toBeVisible();
 }
 test.beforeAll(async()=>{
+  test.setTimeout(90000);
   environment=await initializeTestEnvironment({projectId:project,firestore:{host:'127.0.0.1',port:8180}});
   [users.a,users.b]=await Promise.all([authAccount('food-a'),authAccount('food-b')]);
   await environment.withSecurityRulesDisabled(async context=>{
@@ -48,7 +49,7 @@ test.beforeAll(async()=>{
       setDoc(doc(db,'tenants',tenantB.id,'tables','mesa001'),{id:'mesa001',tenantId:tenantB.id,name:'Mesa B',capacity:4,active:true,state:'AVAILABLE'}),
     ]);
   });
-},90000);
+});
 test.afterAll(async()=>{if(environment)await environment.cleanup();});
 
 test('A: login, preview, edição de marca e tela adaptável em mobile',async({page})=>{
