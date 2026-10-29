@@ -25,8 +25,8 @@ async function authAccount(name: string): Promise<Identity> {
   return {email,password,uid:data.localId};
 }
 async function login(page:Page, slug:string, identity:Identity) {
-  page.on('pageerror',error=>console.error('BROWSER PAGE ERROR:',error.message));
-  page.on('console',message=>{
+  page.on('pageerror', error=>console.error('BROWSER PAGE ERROR:',error.message));
+  page.on('console', message=>{
     if(message.type()==='error')console.error('BROWSER CONSOLE ERROR:',message.text().slice(0,400));
   });
   await page.goto(prefix(slug)+'/login');
@@ -34,7 +34,14 @@ async function login(page:Page, slug:string, identity:Identity) {
   await page.getByLabel('Senha').fill(identity.password);
   await page.getByRole('button',{name:'Entrar',exact:true}).click();
   try {
-    await expect(page).toHaveURL(new RegExp('/t/'+slug+'/admin
+    await expect(page).toHaveURL(new RegExp('/t/'+slug+'/admin$'),{timeout:12000});
+  } catch {
+    const alerts=await page.getByRole('alert').allTextContents();
+    const statuses=await page.getByRole('status').allTextContents();
+    throw new Error('Login did not navigate. Alerts: '+JSON.stringify(alerts).slice(0,600)+' | status: '+JSON.stringify(statuses).slice(0,400));
+  }
+  await expect(page.getByRole('heading',{name:/^Admin:/})).toBeVisible();
+}
 test.beforeAll(async()=>{
   test.setTimeout(90000);
   environment=await initializeTestEnvironment({projectId:project,firestore:{host:'127.0.0.1',port:8180}});
