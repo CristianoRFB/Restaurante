@@ -49,6 +49,8 @@ test.beforeAll(async()=>{
   await environment.withSecurityRulesDisabled(async context=>{
     const db=context.firestore() as unknown as Firestore;
     await Promise.all([
+      setDoc(doc(db,'platformLeads',tenantA.linkedLeadId),{...newFoodLead('Food Browser A','cadastro_manual','',now),demoTenantId:tenantA.id}),
+      setDoc(doc(db,'platformLeads',tenantB.linkedLeadId),{...newFoodLead('Food Browser B','cadastro_manual','',now),demoTenantId:tenantB.id}),
       setDoc(doc(db,'tenants',tenantA.id),tenantA),
       setDoc(doc(db,'tenants',tenantB.id),tenantB),
       setDoc(doc(db,'tenants',tenantA.id,'memberships',users.a!.uid),{uid:users.a!.uid,role:'tenant_owner',active:true}),
