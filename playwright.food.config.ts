@@ -9,14 +9,14 @@ export default defineConfig({
   retries: 0,
   reporter: [['line'], ['html', { outputFolder: 'playwright-food-report', open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:3001',
+    baseURL: 'http://localhost:3001',
     ...devices['Desktop Chrome'],
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'npm run dev:vinext -- --host 127.0.0.1',
-    port: 3001,
+    command: 'npm run dev:vinext -- --host localhost',
+    url: 'http://localhost:3001/',
     stdout: 'pipe',
     stderr: 'pipe',
     reuseExistingServer: !process.env.CI,
