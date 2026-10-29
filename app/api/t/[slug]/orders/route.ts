@@ -1,4 +1,5 @@
 import { FoodTenantAccessError } from '@/shared/food-worker-tenant';
+import { limitFoodDemoRequest } from '@/lib/food-worker-rate-limit';
 import { FoodWorkerAuthError, verifyFoodFirebaseBearer } from '@/lib/food-worker-firebase';
 import { FoodDemoOrderError, placeFoodDemoOrder } from '@/shared/food-demo-order';
 import { beginFoodDemoTransaction, foodDemoOrdersEnabled, makeFoodDemoTransactionStore, rollbackFoodDemoTransaction, FoodFirestoreConflict } from '@/lib/food-worker-demo-transaction';
@@ -17,6 +18,12 @@ export async function POST(request: Request, { params }: { params: { slug: strin
   let transaction: string | undefined;
   try {
     const uid = await verifyFoodFirebaseBearer(request);
+    const limit = await limitFoodDemoRequest(params.slug, uid, 'orders');
+    if (!limit.allowed) {
+      return new Response(JSON.stringify({ error: 'Limite de tentativas da demo atingido.' }), {
+        status: 429, headers: { ...headers, 'retry-after': String(limit.retryAfterSeconds) },
+      });
+    }
     const raw = await request.text();
     if (raw.length > 12_000) return response(413, { error: 'Pedido muito grande.' });
     const payload: unknown = JSON.parse(raw);

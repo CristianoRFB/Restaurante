@@ -3,6 +3,7 @@ import { FoodFirestoreConflict, beginFoodDemoTransaction, foodDemoOrdersEnabled,
 import { makeFoodReservationTransactionStore } from '@/lib/food-worker-demo-reservation-store';
 import { FoodDemoReservationError, bookFoodDemoReservation } from '@/shared/food-demo-reservation';
 import { FoodTenantAccessError } from '@/shared/food-worker-tenant';
+import { limitFoodDemoRequest } from '@/lib/food-worker-rate-limit';
 
 const headers = { 'content-type': 'application/json', 'cache-control': 'no-store, private' };
 function json(status: number, data: Record<string, unknown>) { return new Response(JSON.stringify(data), { status, headers }); }
@@ -14,6 +15,12 @@ export async function POST(request: Request, { params }: { params: { slug: strin
   let transaction: string | undefined;
   try {
     const uid = await verifyFoodFirebaseBearer(request);
+    const limit = await limitFoodDemoRequest(params.slug, uid, 'reservations');
+    if (!limit.allowed) {
+      return new Response(JSON.stringify({ error: 'Limite de tentativas da demo atingido.' }), {
+        status: 429, headers: { ...headers, 'retry-after': String(limit.retryAfterSeconds) },
+      });
+    }
     const raw = await request.text();
     if (raw.length > 2048) return json(413, { error: 'Payload grande demais.' });
     const payload: unknown = JSON.parse(raw);
