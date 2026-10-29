@@ -29,6 +29,12 @@ async function login(page:Page, slug:string, identity:Identity) {
   page.on('console', message=>{
     if(message.type()==='error')console.error('BROWSER CONSOLE ERROR:',message.text().slice(0,400));
   });
+  page.on('response', async response=>{
+    if(response.url().includes('/api/t/') && response.status()>=400) {
+      const body=await response.text().catch(()=>'<no JSON>');
+      console.error('FOOD API STATUS:',response.status(),'BODY:',body.slice(0,400));
+    }
+  });
   await page.goto(prefix(slug)+'/login');
   await page.getByRole('textbox',{name:'E-mail'}).fill(identity.email);
   await page.getByLabel('Senha').fill(identity.password);
