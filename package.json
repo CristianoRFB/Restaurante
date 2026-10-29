@@ -28,7 +28,8 @@
     "start:vinext": "wrangler dev --config dist/server/wrangler.json",
     "deploy:vinext": "vinext-cloudflare deploy --config dist/server/wrangler.json",
     "seed:food:demo": "node --experimental-strip-types scripts/seed-food-demo.mts",
-    "migrate:food:legacy": "node --experimental-strip-types scripts/migrate-food-legacy.mts"
+    "migrate:food:legacy": "node --experimental-strip-types scripts/migrate-food-legacy.mts",
+    "test:e2e:food": "playwright test --config playwright.food.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

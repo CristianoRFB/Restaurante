@@ -1,0 +1,38 @@
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests/e2e/food',
+  timeout: 90_000,
+  expect: { timeout: 15_000 },
+  fullyParallel: false,
+  workers: 1,
+  retries: 0,
+  reporter: [['line'], ['html', { outputFolder: 'playwright-food-report', open: 'never' }]],
+  use: {
+    baseURL: 'http://127.0.0.1:3001',
+    ...devices['Desktop Chrome'],
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  webServer: {
+    command: 'npm run dev:vinext -- --host 127.0.0.1',
+    url: 'http://127.0.0.1:3001/t/food-browser-a-demo/login',
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+    env: {
+      ...process.env,
+      NEXT_PUBLIC_DATA_MODE: 'firebase',
+      NEXT_PUBLIC_FIREBASE_API_KEY: 'emulator-browser-only-key',
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'demo-baru-gastronomia',
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'demo-baru-gastronomia.firebaseapp.com',
+      NEXT_PUBLIC_FIREBASE_APP_ID: '1:123456789:web:foodbrowserfixture',
+      NEXT_PUBLIC_USE_FIREBASE_EMULATORS: 'true',
+      NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST: '127.0.0.1',
+      NEXT_PUBLIC_FIRESTORE_EMULATOR_PORT: '8180',
+      FIREBASE_PROJECT_ID: 'demo-baru-gastronomia',
+      FIRESTORE_EMULATOR_HOST: '127.0.0.1:8180',
+      FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+      FOOD_DEMO_ORDERS_MODE: 'emulator',
+    },
+  },
+});
