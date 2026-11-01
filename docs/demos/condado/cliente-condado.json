@@ -1,0 +1,21 @@
+{
+  "product": "Food/Baru",
+  "lead": {
+    "name": "Condado — Cafés Especiais & Livros",
+    "slug": "condado-cafes-especiais-livros",
+    "instagram": "https://www.instagram.com/condadolivraria/",
+    "address": "Rua Sete, 715, Loja 8, Santa Fé do Sul - SP",
+    "status": "NOT_SIGNED",
+    "brandAuthorization": "UNCONFIRMED"
+  },
+  "demo": {
+    "slug": "condado-cafes-especiais-livros-demo",
+    "kind": "DEMO",
+    "publiclyListed": false,
+    "pricesVerified": false,
+    "requiresApprovalBeforeProduction": true,
+    "payments": false,
+    "ordersReal": false,
+    "reservationsReal": false
+  }
+}
