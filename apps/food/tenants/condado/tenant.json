@@ -1,0 +1,15 @@
+{
+  "tenantId": "condado-demo",
+  "slug": "condado",
+  "name": "Condado Livraria & Café",
+  "vertical": "FOOD",
+  "address": "Rua Sete, 715, Loja 8, Centro, Santa Fé do Sul, SP",
+  "instagram": "https://www.instagram.com/condadolivraria/",
+  "kind": "DEMO",
+  "contractStatus": "NOT_SIGNED",
+  "publicationStatus": "PREVIEW",
+  "brandAuthorization": "UNCONFIRMED",
+  "bookings": "REQUEST_ONLY",
+  "payments": false,
+  "requiresOwnerApproval": true
+}
