@@ -1,0 +1,45 @@
+name: Condado Passwordless Demo
+on:
+  push:
+    branches:
+      - main
+      - feat/condado-public-admin-demo-20261101
+    paths:
+      - 'apps/food/tenants/condado/**'
+      - '.github/workflows/condado-public-demo.yml'
+  pull_request:
+    paths:
+      - 'apps/food/tenants/condado/**'
+      - '.github/workflows/condado-public-demo.yml'
+jobs:
+  static-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check apps/food/tenants/condado/demo-admin.js
+          node --check apps/food/tenants/condado/worker.mjs
+          node --check apps/food/tenants/condado/app.js
+          node --check apps/food/tenants/condado/panel.js
+      - name: Build Worker with all new assets
+        run: |
+          cd apps/food/tenants/condado
+          node build.mjs
+          node --check dist/worker.mjs
+      - name: Check public demo / protected admin route separation
+        run: |
+          node --input-type=module -e "
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const worker=fs.readFileSync('apps/food/tenants/condado/worker.mjs','utf8');
+          const demo=fs.readFileSync('apps/food/tenants/condado/demo-admin.js','utf8');
+          assert(worker.includes(\"p==='/painel'||p==='/demo/admin'\"));
+          assert(worker.includes(\"p==='/gestao'||p==='/painel/seguro'\"));
+          assert(worker.includes(\"if(p==='/api/admin')return auth(req,env)\"));
+          assert(!demo.includes('/api/admin'));
+          assert(!demo.includes('ADMIN_TOKEN'));
+          "
