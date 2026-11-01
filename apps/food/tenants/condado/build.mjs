@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=path.dirname(fileURLToPath(import.meta.url));
+const files=['index.html','style.css','app.js','panel.html','panel.js'];
+const assets=Object.fromEntries(files.map(name=>[name,fs.readFileSync(path.join(root,name),'utf8')]));
+const src=fs.readFileSync(path.join(root,'worker.mjs'),'utf8');
+if(!src.includes('__ASSETS__'))throw new Error('Missing assets placeholder');
+fs.mkdirSync(path.join(root,'dist'),{recursive:true});
+fs.writeFileSync(path.join(root,'dist','worker.mjs'),src.replace('__ASSETS__',JSON.stringify(assets)));
+console.log('Worker generated',fs.statSync(path.join(root,'dist','worker.mjs')).size,'bytes');
