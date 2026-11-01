@@ -2,7 +2,10 @@
 **Site:** https://food-condado-preview.on7.workers.dev/
 **Cardápio:** https://food-condado-preview.on7.workers.dev/cardapio
 **Reservas:** https://food-condado-preview.on7.workers.dev/reservas
-**Admin:** https://food-condado-preview.on7.workers.dev/painel
+**Admin aberto (demonstração com dados fictícios):** https://food-condado-preview.on7.workers.dev/painel
+**Admin protegido (dados D1 reais do ambiente de testes):** https://food-condado-preview.on7.workers.dev/gestao
+
+A rota `/painel` contém um showroom que funciona sem senha e **NÃO acessa `/api/admin`**. As alterações em `/painel` ficam somente no `localStorage` do navegador; impressão é pré-conta sem validade fiscal. A rota `/gestao` preserva a autenticação por segredo e os dados persistidos do ambiente de teste. Nunca publicar diretamente a API administrativa sem autenticação.
 **QR:** /mesa/1, /mesa/2, /mesa/3, /mesa/4
 
 ## Fluxo
@@ -18,7 +21,7 @@
 - Banco D1 isolado food-condado-preview, tenant condado-demo, dados de teste.
 - Quatro mesas são configuração ilustrativa informada pelo prospectador, não capacidade física verificada; horários e cardápio deverão ser confirmados pelo estabelecimento.
 - Fotos de banco de imagens ilustrativo, não fotos oficiais. Produtos e valores simulados.
-- ADMIN_TOKEN é segredo Cloudflare, nunca versionado. Frontend guarda sessão apenas via sessionStorage.
+- ADMIN_TOKEN é segredo Cloudflare, nunca versionado. O painel da rota /painel não recebe nem consulta o segredo; a API /api/admin continua protegida. Frontend guarda sessão apenas via sessionStorage.
 - Comprovante gerado via impressão HTML não é NFC-e/DANFE. Integração fiscal requer credenciamento, credenciais e autorização.
 - Sem integração no Firebase Food multi-tenant legado; é um módulo isolado de demonstração real no repositório Food. Nunca migrar o Baru nem habilitar checkout financeiro real sem autorização e testes.
 - Antes de um uso comercial efetivo implementar: autenticação e papéis próprios, QR de mesa autenticado/rotativo, observabilidade, antiabuso mais forte, acordo LGPD e política de retenção/backup, estabilidade transacional de pedidos, pagamento real quando autorizado e testes end-to-end.

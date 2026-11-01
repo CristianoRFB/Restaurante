@@ -80,8 +80,9 @@ export default {async fetch(req,env){
    if(p==='/'||p==='/index.html')return file(ASSETS['index.html'],'text/html; charset=utf-8');
    if(p==='/cardapio'||p.startsWith('/mesa/'))return file(ASSETS['menu.html'],'text/html; charset=utf-8');
    if(p==='/reservas')return file(ASSETS['reservas.html'],'text/html; charset=utf-8');
-   if(p==='/painel')return file(ASSETS['panel.html'],'text/html; charset=utf-8');
-   if(['style.css','app.js','panel.js'].includes(p.slice(1)))return file(ASSETS[p.slice(1)],p.endsWith('.css')?'text/css; charset=utf-8':'application/javascript; charset=utf-8');
+   if(p==='/painel'||p==='/demo/admin')return file(ASSETS['demo-admin.html'],'text/html; charset=utf-8');
+   if(p==='/gestao'||p==='/painel/seguro')return file(ASSETS['panel.html'],'text/html; charset=utf-8');
+   if(['style.css','app.js','panel.js','demo-admin.css','demo-admin.js'].includes(p.slice(1)))return file(ASSETS[p.slice(1)],p.endsWith('.css')?'text/css; charset=utf-8':'application/javascript; charset=utf-8');
    if(p==='/api/menu')return send({items:await menu(env),mode:'DEMO'});
    if(p==='/api/table'){const table=Number(u.searchParams.get('number'));return positive(table)?send({...await currentTab(env,table),mode:'DEMO'}):send({error:'Mesa inválida.'},422)}
    if(p==='/api/health'){const row=await env.DB.prepare('SELECT id FROM tenants WHERE id=?').bind(TENANT).first();return send({ok:!!row,tenant:TENANT,scope:'staging'})}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#192b26">
+<meta name="robots" content="noindex,nofollow">
+<title>Condado — Sala de controle | Demonstração</title>
+<meta name="description" content="Painel interativo de demonstração do Condado com quatro mesas, comandas, reservas e cardápio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/demo-admin.css"><script src="/demo-admin.js" defer></script>
+</head>
+<body>
+<div class="demo-notice"><span class="notice-dot"></span><strong>AMBIENTE DEMONSTRATIVO</strong><span>Sem login • dados fictícios • alterações somente neste navegador</span></div>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="/"><span class="brand-symbol">C<span>.</span></span><span>CONDADO<small>CAFÉS ESPECIAIS & LIVROS</small></span></a>
+    <div class="side-subtitle">OPERAÇÃO DA CAFETERIA</div>
+    <nav class="side-nav" aria-label="Seções do painel">
+      <button type="button" data-view="overview" class="nav-item selected"><span class="nav-symbol">◫</span> Visão geral</button>
+      <button type="button" data-view="orders" class="nav-item"><span class="nav-symbol">≡</span> Pedidos e comandas <span class="nav-count" id="countOrders">0</span></button>
+      <button type="button" data-view="reservations" class="nav-item"><span class="nav-symbol">▦</span> Reservas <span class="nav-count" id="countBookings">0</span></button>
+      <button type="button" data-view="menu" class="nav-item"><span class="nav-symbol">☰</span> Cardápio digital</button>
+      <button type="button" data-view="qr" class="nav-item"><span class="nav-symbol">⌗</span> QR Codes das mesas</button>
+    </nav>
+    <div class="sidebar-bottom"><span class="online-pulse"></span> Prévia interativa ativa
+    <p>Uma operação pequena merece um sistema simples.</p>
+    <a href="/cardapio">Ver cardápio do cliente <span aria-hidden="true">↗</span></a>
+    <a href="/gestao">Acesso administrativo protegido <span aria-hidden="true">↗</span></a></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div class="top-left"><button id="toggleMenu" class="mobile-menu" type="button" aria-label="Abrir menu">☰</button><span class="breadcrumb">CONDADO / <span id="breadcrumbTitle">VISÃO GERAL</span></span></div><div class="top-right"><span class="today-label" id="currentDate"></span><span class="avatar" title="Visitante da demonstração">D</span></div></header>
+    <main class="main">
+      <div class="page-heading"><div><span class="eyebrow">PAINEL DE APRESENTAÇÃO • 4 MESAS</span><h1 id="pageTitle">Um café, toda a operação.</h1><p id="pageSubtitle">Acompanhe pedidos, mesas e reservas de forma simples, em um só lugar.</p></div><div class="page-actions"><button id="resetDemo" class="soft-button" type="button">Reiniciar demonstração</button><button id="simulateOrder" class="main-button" type="button">+ Simular novo pedido</button></div></div>
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+      <section data-section="overview">
+        <div class="metrics"><article class="metric"><span>MESAS EM ATENDIMENTO</span><strong id="metricTables">—</strong><small>De 4 mesas cadastradas</small><i class="metric-mark">01</i></article><article class="metric"><span>PEDIDOS EM ANDAMENTO</span><strong id="metricPending">—</strong><small>Da chegada à entrega</small><i class="metric-mark">02</i></article><article class="metric"><span>RESERVAS PARA ANALISAR</span><strong id="metricBookings">—</strong><small>Solicitações pendentes</small><i class="metric-mark">03</i></article><article class="metric"><span>CONTAS EM ABERTO</span><strong id="metricTotal">—</strong><small>Total demonstrativo</small><i class="metric-mark">04</i></article></div>
+        <div class="grid-major"><article class="panel"><div class="panel-head"><div><span class="eyebrow">MAPA DO SALÃO</span><h2>Quatro mesas, tudo à vista.</h2></div><button class="link-button" type="button" data-go="orders">Gerenciar comandas <span>↗</span></button></div><div class="tables-grid" id="overviewTables"></div><div class="legend"><span><i class="dot dot-free"></i> Disponível</span><span><i class="dot dot-busy"></i> Em atendimento</span><span><i class="dot dot-close"></i> Fechamento pedido</span></div></article>
+        <article class="panel"><div class="panel-head"><div><span class="eyebrow">ACONTECEU AGORA</span><h2>Pedidos recentes</h2></div></div><div id="recentOrders" class="recent-list"></div><button type="button" data-go="orders" class="outline-wide">Ver todas as comandas <span>↗</span></button></article></div>
+        <article class="feature-strip"><div><span class="eyebrow">COMO FUNCIONA</span><h2>Do QR Code à conta fechada.</h2></div><div class="process-steps"><span><b>01</b> Cliente escaneia</span><span><b>02</b> Pedido aparece</span><span><b>03</b> Equipe prepara</span><span><b>04</b> Caixa encerra</span></div></article>
+      </section>
+      <section data-section="orders" hidden><div class="split-head"><div><span class="eyebrow">ATENDIMENTO EM TEMPO REAL — DEMO</span><h2>Comandas por mesa</h2><p>Registre pedidos extras, avance o preparo, imprima a pré-conta e finalize a mesa.</p></div></div><div id="orderTables" class="table-operations"></div><article class="panel space-top"><div class="panel-head"><div><span class="eyebrow">FILA DE PREPARO</span><h2>Todos os pedidos</h2></div></div><div id="orderQueue" class="queue"></div></article></section>
+      <section data-section="reservations" hidden><div class="split-head"><div><span class="eyebrow">AGENDA COMPACTA</span><h2>Reservas do Condado</h2><p>Uma solicitação só se torna aceita após escolher uma mesa disponível. Janela de 90 minutos por reserva, apenas para demonstração.</p></div><button type="button" id="addBooking" class="main-button">+ Nova reserva de exemplo</button></div><div id="bookingList" class="booking-list"></div></section>
+      <section data-section="menu" hidden><div class="split-head"><div><span class="eyebrow">CATÁLOGO DA CAFETERIA</span><h2>Cardápio sob controle</h2><p>Ative ou pause itens e experimente modificar valores. Não altera preços reais no site público.</p></div><a class="soft-button as-link" href="/cardapio" target="_blank" rel="noopener">Abrir cardápio do cliente ↗</a></div><div id="menuItems" class="catalog-grid"></div></section>
+      <section data-section="qr" hidden><div class="split-head"><div><span class="eyebrow">PEDIDO SEM APLICATIVO</span><h2>Um QR Code em cada mesa.</h2><p>Os QR Codes apontam para as telas públicas de teste. Imprima e mostre como o pedido chega ao sistema.</p></div></div><div class="qr-grid" id="qrGrid"></div></section>
+      <footer class="footnote">CONDADO / FOOD • PRÉVIA COMERCIAL INDEPENDENTE • NÃO É O SISTEMA OFICIAL DA CAFETERIA • NENHUMA COBRANÇA OU NOTA FISCAL É EMITIDA.</footer>
+    </main>
+  </div>
+</div>
+<div id="modalLayer" class="modal-layer" hidden><div class="modal-cover" data-close-modal></div><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog-heading"><div><span class="eyebrow">DEMONSTRAÇÃO</span><h2 id="modalTitle">Novo pedido</h2></div><button type="button" id="closeModal" class="icon-close" aria-label="Fechar">×</button></div><div id="modalBody"></div></div></div>
+<div id="printArea" class="print-area"></div>
+</body></html>
