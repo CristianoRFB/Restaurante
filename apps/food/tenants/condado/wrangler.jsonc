@@ -1,0 +1,15 @@
+{
+  "name": "food-condado-preview",
+  "main": "dist/worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "food-condado-preview",
+      "database_id": "e9454704-3f8f-4066-8e81-44160633c449"
+    }
+  ]
+}
