@@ -46,3 +46,34 @@ Estoque real, API, carrinho transacional, envio WhatsApp, integração de pagame
 
 ## Gates
 CI remoto do SHA, checagem do endpoint, abertura das três visões por cliente e prova via navegador quando disponível. Não afirmar teste mobile visual completo sem screenshot ou evidência.
+
+
+## Operação V4 — Redesign por feedback visual (2026-11-02)
+
+### Evidência e problema
+A captura do usuário mostrou sidebar dominante, KPIs zerados, fila vazia, grande espaço vertical e quase nenhuma demonstração operacional. O novo layout demonstra o trabalho do atendente, não somente ornamentação.
+
+### Direção visual
+- Personalidade: acolhedora, ágil, confiável.
+- Público: atendente de pedidos regionais e gestor de catálogo.
+- Tarefa central: abrir, revisar e avançar pedido ilustrativo em 30 segundos.
+- Proposta: filas visíveis por etapa e região, sem substituir os canais reais.
+- Paleta: papel #f5f4f0; sidebar chocolate #30231a; superfície #fff; bordas #e4dfd6; estados âmbar, violeta, verde e cinza.
+- Fraunces em cabeçalhos; DM Sans em UI e tarefas.
+- Desktop: sidebar de 205 px, Kanban de quatro etapas e cards compactos.
+- Mobile: sidebar vira navegação horizontal; KPIs 2x2; board empilhado e tickets com ações tocáveis.
+- Estados: empty state para filtros sem resultados.
+- Interações: alternar quadro/lista, filtrar por etapa e cidade, buscar, destacar prioridade, abrir detalhes, avançar etapa, reabrir, restaurar demonstração e alterar preço/disponibilidade.
+- Motion reduzido, foco visível, modal fechável por Escape e CTA com retorno claro.
+
+### Dados e segurança
+Cinco registros de demonstração (DV-1044 a DV-1048) representam cenários fictícios. Cidades observadas publicamente não comprovam cobertura de entrega. Produtos, valores, notas, KPIs e estados são sintéticos. Nenhum nome, telefone ou pedido real. Persistência somente em localStorage; não há autenticação nem backend na demo.
+
+### Critérios V4
+1. Mostrar cinco tickets fictícios na primeira visita (não uma fila vazia).
+2. Abrir detalhes; ver itens e notas; avançar estado e perceber mudança.
+3. Filtrar prontidão, pesquisar por nome/ID, alternar quadro/lista.
+4. Montar sacola no cliente; gerar um sexto pedido na operação.
+5. Atualizar produto/visibilidade e verificar no catálogo.
+6. Sem overflow em 320, 360, 390, 430, 768, 1024 e 1440 pixels.
+7. Screenshots reais, CI e teste visual do SHA publicado.
