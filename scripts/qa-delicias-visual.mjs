@@ -36,7 +36,7 @@ async function check(width, height, route, name) {
   if (route === 'atendimento' && width === 390) {
     const original = await page.locator('.ticket').count();
     if (original !== 5) failed = true;
-    await page.locator('[data-action="detail"][data-id="DV-1048"]').click();
+    await page.locator('[data-action="detail"][data-id="DV-1048"]').first().click();
     const details = await page.locator('#detail-heading').textContent();
     await page.screenshot({ path: 'artifacts/delicias-ux/order-details-390.png', fullPage: true });
     if (!details?.includes('DV-1048')) failed = true;
