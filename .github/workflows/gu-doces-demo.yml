@@ -30,3 +30,11 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: node apps/food/tenants/gu-doces-gourmet/browser-test.mjs
+      - name: Attach real mobile screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gu-doces-mobile-390px
+          path: /tmp/gu-mobile-check.png
+          if-no-files-found: warn
+          retention-days: 14
