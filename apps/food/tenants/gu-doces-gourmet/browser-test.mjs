@@ -9,6 +9,11 @@ page.on('pageerror', e => errors.push(e.message));
 try {
   await page.goto(url+'/', {waitUntil:'domcontentloaded'});
   await page.waitForSelector('#cat-name:not(:empty)');
+  await page.waitForFunction(() => {
+    const images = [...document.querySelectorAll('.hero-photo')];
+    return images.length === 2 && images.every(img => img.complete && img.naturalWidth > 0);
+  }, null, {timeout:20000});
+  assert.ok(await page.locator('.hero-photo.primary').evaluate(img => img.naturalWidth > 400), 'hero image must be real and loaded');
   assert.equal((await page.locator('#cat-name').textContent())?.trim(),'Tradicional');
   await page.locator('#flavor-search').fill('beij');
   assert.equal(await page.locator('#flavors .chip').count(),1);
