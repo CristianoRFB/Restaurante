@@ -17,7 +17,7 @@ try {
   await page.locator('#demo-name').fill('Cliente Teste E2E');
   await page.locator('#add-order').click();
   await page.waitForURL('**/producao');
-  const card = page.locator('.order-card').filter({hasText:'Cliente Teste E2E'});
+  const card = page.locator('#production-orders .order-card').filter({hasText:'Cliente Teste E2E'});
   await card.waitFor();
   assert.match(await card.textContent(),/Aguardando sinal/);
   await card.locator('[data-advance]').click();
