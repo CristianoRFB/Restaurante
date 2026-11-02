@@ -1,0 +1,40 @@
+name: GU Doces Gourmet — demo isolated
+on:
+  pull_request:
+    paths:
+      - 'apps/food/tenants/gu-doces-gourmet/**'
+      - '.github/workflows/gu-doces-demo.yml'
+  push:
+    branches:
+      - 'demo/gu-doces-gourmet-20261102'
+    paths:
+      - 'apps/food/tenants/gu-doces-gourmet/**'
+      - '.github/workflows/gu-doces-demo.yml'
+jobs:
+  demo-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check apps/food/tenants/gu-doces-gourmet/worker.mjs
+      - run: node --test apps/food/tenants/gu-doces-gourmet/test.mjs
+  browser-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: node apps/food/tenants/gu-doces-gourmet/browser-test.mjs
+      - name: Attach real mobile screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gu-doces-visual-review
+          path: /tmp/gu-*-check.png
+          if-no-files-found: warn
+          retention-days: 14
