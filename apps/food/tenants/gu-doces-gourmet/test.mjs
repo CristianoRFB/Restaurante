@@ -13,8 +13,8 @@ test('cliente, produção e gestão servem páginas com rótulo de demo', async 
     assert.equal(response.status, 200);
     assert.match(response.headers.get('content-type') || '', /text\/html/);
     const html = await response.text();
-    assert.ok(html.includes('Demonstração conceitual não oficial'));
-    assert.ok(html.includes('Nenhuma encomenda real será enviada'));
+    assert.ok(html.includes('Prévia conceitual independente'));
+    assert.ok(html.includes('Sem pedidos ou pagamentos reais'));
     assert.ok(html.includes('Produção'));
     assert.ok(html.includes('Gestão'));
   }
@@ -27,7 +27,7 @@ test('script da interface é JavaScript sintaticamente válido', async () => {
   assert.doesNotThrow(() => new Script(script));
   assert.ok(html.includes('54'));
   assert.ok(script.includes('Ferrero Rocher'));
-  assert.ok(script.includes('Entrada de 50%') || html.includes('Entrada de 50%'));
+  assert.ok(html.includes('Entrada prevista (50%)'));
 });
 
 test('isola demo de mutações reais e aplica rotas estritas', async () => {
