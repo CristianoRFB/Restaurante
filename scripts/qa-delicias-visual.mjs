@@ -33,13 +33,32 @@ async function check(width, height, route, name) {
   if (overflow || errors.length) failed = true;
   await page.screenshot({ path: 'artifacts/delicias-ux/' + name + '.png', fullPage: true });
   report.push({ name, route, width, height, overflow, errors, ...dimensions });
+  if (route === 'atendimento' && width === 390) {
+    const original = await page.locator('.ticket').count();
+    if (original !== 5) failed = true;
+    await page.locator('[data-action="detail"][data-id="DV-1048"]').click();
+    const details = await page.locator('#detail-heading').textContent();
+    await page.screenshot({ path: 'artifacts/delicias-ux/order-details-390.png', fullPage: true });
+    if (!details?.includes('DV-1048')) failed = true;
+    await page.locator('[data-action="advance"][data-id="DV-1048"]').last().click();
+    const status = await page.locator('.detail-pills .status-tag').textContent();
+    if (!status?.includes('Em separação')) failed = true;
+    await page.locator('[data-action="close-detail"]').click();
+    await page.locator('[data-action="order-filter"][data-status="pronto"]').click();
+    const filtered = await page.locator('.ticket').count();
+    if (filtered !== 1) failed = true;
+    await page.locator('[data-action="mode"][data-mode="list"]').click();
+    const listed = await page.locator('.order-list-row').count();
+    if (listed !== 1) failed = true;
+    report.push({ name: 'operations-interaction', initial: original, details, status, filtered, listed });
+  }
   if (route === 'cliente' && width === 390) {
     await page.locator('[data-action=add]').first().click();
     await page.locator('[data-action=cart]').first().click();
     await page.locator('[data-action=simulate]').click();
-    const order = await page.locator('.order-row').count();
-    if (order !== 1) failed = true;
-    report.push({ name: 'journey', simulatedOrder: order, heading: await page.locator('main h1').textContent() });
+    const order = await page.locator('.ticket').count();
+    if (order !== 6) failed = true;
+    report.push({ name: 'journey', visibleOrders: order, heading: await page.locator('main h1').textContent() });
     await page.screenshot({ path: 'artifacts/delicias-ux/flow-attendance-390.png', fullPage: true });
   }
   await page.close();
