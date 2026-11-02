@@ -42,7 +42,7 @@ describe('Delícias Viajantes — isolated nonofficial browser demo', () => {
     expect(t.document.querySelectorAll('.order-row').length).toBe(1);
     expect(t.document.querySelector('.state')?.textContent).toContain('Novo');
     t.click('[data-action="advance"]');
-    expect(t.document.querySelector('.state')?.textContent).toContain('Separando');
+    expect(t.document.querySelector('.state')?.textContent).toContain('Em separação');
     expect(t.errors).toEqual([]);
     t.dom.window.close();
   });
