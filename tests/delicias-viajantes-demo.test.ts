@@ -33,16 +33,38 @@ describe('Delícias Viajantes — isolated nonofficial browser demo', () => {
     t.dom.window.close();
   });
 
-  it('takes a fictitious product from catalog to cart to internal operations, without sending requests', () => {
+  it('shows clearly fictitious orders, lets staff inspect and advance statuses', () => {
+    const t = launch();
+    t.navigate('#/atendimento');
+    expect(t.document.querySelectorAll('.ticket').length).toBe(5);
+    expect(t.document.querySelector('.ops-brief')?.textContent).toContain('Todos os registros abaixo são fictícios');
+    t.click('[data-action="detail"][data-id="DV-1048"]');
+    expect(t.document.querySelector('#detail-heading')?.textContent).toContain('DV-1048');
+    expect(t.document.querySelector('.detail-product')?.textContent).toContain('Seleção de chocolates');
+    t.click('[data-action="advance"][data-id="DV-1048"]');
+    expect(t.document.querySelector('.detail-pills .status-tag')?.textContent).toContain('Em separação');
+    t.click('[data-action="close-detail"]');
+    t.click('[data-action="order-filter"][data-status="pronto"]');
+    expect(t.document.querySelectorAll('.ticket').length).toBe(1);
+    t.click('[data-action="mode"][data-mode="list"]');
+    expect(t.document.querySelectorAll('.order-list-row').length).toBe(1);
+    expect(t.errors).toEqual([]);
+    t.dom.window.close();
+  });
+
+  it('carries cart line items into a new simulated order and can inspect them', () => {
     const t = launch();
     t.click('[data-action="add"]');
     t.click('[data-action="cart"]');
     expect(t.document.querySelector('.preview-box')?.textContent).toContain('Total ilustrativo');
     t.click('[data-action="simulate"]');
-    expect(t.document.querySelectorAll('.order-row').length).toBe(1);
-    expect(t.document.querySelector('.state')?.textContent).toContain('Novo');
-    t.click('[data-action="advance"]');
-    expect(t.document.querySelector('.state')?.textContent).toContain('Em separação');
+    const state = JSON.parse(t.dom.window.localStorage.getItem('dv-preview-77-v2') || '{}');
+    const created = state.orders.find((order: {sample: boolean}) => order.sample === false);
+    expect(created).toBeTruthy();
+    expect(created.items[0].name).toContain('Seleção de chocolates');
+    expect(t.document.querySelectorAll('.ticket').length).toBe(6);
+    t.click('[data-action="detail"][data-id="' + created.id + '"]');
+    expect(t.document.querySelector('.detail-product')?.textContent).toContain('Seleção de chocolates');
     expect(t.errors).toEqual([]);
     t.dom.window.close();
   });
