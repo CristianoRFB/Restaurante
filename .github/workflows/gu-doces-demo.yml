@@ -1,0 +1,22 @@
+name: GU Doces Gourmet — demo isolated
+on:
+  pull_request:
+    paths:
+      - 'apps/food/tenants/gu-doces-gourmet/**'
+      - '.github/workflows/gu-doces-demo.yml'
+  push:
+    branches:
+      - 'demo/gu-doces-gourmet-20261102'
+    paths:
+      - 'apps/food/tenants/gu-doces-gourmet/**'
+      - '.github/workflows/gu-doces-demo.yml'
+jobs:
+  demo-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check apps/food/tenants/gu-doces-gourmet/worker.mjs
+      - run: node --test apps/food/tenants/gu-doces-gourmet/test.mjs
