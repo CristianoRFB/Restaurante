@@ -48,6 +48,20 @@ try {
   for (const w of [320, 360, 390, 430, 768, 1024, 1440]) {
     await check(w, w <= 430 ? 844 : 900, 'cliente', 'cliente-' + w);
   }
+  // Simulate an offline image CDN. Fallback art must prevent empty catalog cards.
+  const blocked = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await blocked.route('**/images.unsplash.com/**', route => route.abort());
+  await blocked.goto(root + '#/cliente', { waitUntil: 'load' });
+  await blocked.waitForFunction(() => document.querySelectorAll('.media-fallback').length === 6);
+  await blocked.waitForTimeout(300);
+  const fallback = await blocked.evaluate(() => ({
+    count: document.querySelectorAll('.media-fallback .mock-pouch').length,
+    visibleCopy: [...document.querySelectorAll('.mock-pouch b')].map(e => e.textContent)
+  }));
+  if (fallback.count !== 6) failed = true;
+  report.push({ name: 'photos-blocked-390', ...fallback });
+  await blocked.screenshot({ path: 'artifacts/delicias-ux/photos-blocked-390.png', fullPage: true });
+  await blocked.close();
   for (const route of ['atendimento', 'gestao']) {
     for (const w of [390, 1440]) {
       await check(w, w < 500 ? 844 : 900, route, route + '-' + w);
