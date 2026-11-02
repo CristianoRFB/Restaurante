@@ -34,7 +34,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gu-doces-mobile-390px
-          path: /tmp/gu-mobile-check.png
+          name: gu-doces-visual-review
+          path: /tmp/gu-*-check.png
           if-no-files-found: warn
           retention-days: 14
