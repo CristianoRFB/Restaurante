@@ -10,9 +10,13 @@ try {
   await page.goto(url+'/', {waitUntil:'domcontentloaded'});
   await page.waitForSelector('#cat-name:not(:empty)');
   assert.equal((await page.locator('#cat-name').textContent())?.trim(),'Tradicional');
+  await page.locator('#flavor-search').fill('beij');
+  assert.equal(await page.locator('#flavors .chip').count(),1);
+  await page.locator('#flavor-search').fill('');
   await page.locator('[data-flavor="Beijinho"]').click();
   await page.locator('[data-flavor="Ninho"]').click();
   assert.equal(await page.locator('.selected-pill').count(),2);
+  assert.match(await page.locator('#flavor-count').textContent(),/2 de 4/);
   assert.match(await page.locator('#order-total').textContent(), /145,00/);
   await page.locator('#demo-name').fill('Cliente Teste E2E');
   await page.locator('#add-order').click();
@@ -30,8 +34,13 @@ try {
   await page.locator('a[data-route="/"]').first().click();
   await page.waitForURL(url+'/');
   assert.match(await page.locator('#cat-price').textContent(),/160,00/);
-  const sizes = await page.evaluate(() => ({width:document.documentElement.scrollWidth,screen:window.innerWidth}));
-  assert.ok(sizes.width <= sizes.screen+2, 'mobile horizontal overflow: '+JSON.stringify(sizes));
+  for (const width of [320,360,390,430,768,1024,1440]) {
+    await page.setViewportSize({width,height:900});
+    const sizes = await page.evaluate(() => ({width:document.documentElement.scrollWidth,screen:window.innerWidth}));
+    assert.ok(sizes.width <= sizes.screen+2, 'horizontal overflow at '+width+': '+JSON.stringify(sizes));
+  }
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:'/tmp/gu-mobile-check.png',fullPage:true});
   assert.deepEqual(errors,[]);
-  console.log('E2E passed: mobile 390px, category, order, production, admin editor, navigation and no page exceptions.');
+  console.log('E2E passed: 7 responsive widths, flavor search, order, production, admin prices and no page exceptions.');
 } finally { await browser.close() }
