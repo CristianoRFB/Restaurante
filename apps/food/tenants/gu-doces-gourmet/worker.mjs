@@ -163,6 +163,8 @@ var c=calculation();$("selection").innerHTML=selection.length?selection.map(func
 $("order-total").textContent=c.total!=null?money(c.total):"A confirmar";
 $("order-deposit").textContent=c.total!=null?money(c.total*.5):"A confirmar";
 $("mix-warning").textContent=c.label;
+$("flavor-count").textContent=selection.length+" de 4 sabores";
+$("progress-fill").style.width=(selection.length*25)+"%";
 }
 function renderCategories(){
 $("categories").innerHTML=DATA.map(function(d){return '<button class="tab '+(d.id===active?"active":"")+'" data-cat="'+d.id+'">'+safe(d.name)+'</button>'}).join("");
@@ -171,10 +173,15 @@ $("cat-eyebrow").textContent="Categoria · até 4 sabores";
 $("cat-name").textContent=d.name;
 $("cat-price").innerHTML=money(Number(prices[d.id]))+'<small> / cento</small>';
 $("cat-description").textContent=d.desc;
-$("flavors").innerHTML=d.flavors.map(function(flavor){var selected=selection.includes(flavor);return '<button type="button" class="chip '+(selected?"selected":"")+'" data-flavor="'+safe(flavor)+'" aria-pressed="'+(selected?"true":"false")+'" '+(!selected&&selection.length>=4?"disabled":"")+'>'+safe(flavor)+'</button>'}).join("");
+var term=$("flavor-search").value.trim().toLocaleLowerCase("pt-BR");
+var found=d.flavors.filter(function(f){return f.toLocaleLowerCase("pt-BR").includes(term)});
+$("flavors").innerHTML=found.map(function(flavor){var selected=selection.includes(flavor);return '<button type="button" class="chip '+(selected?"selected":"")+'" data-flavor="'+safe(flavor)+'" aria-pressed="'+(selected?"true":"false")+'" '+(!selected&&selection.length>=4?"disabled":"")+'>'+safe(flavor)+'</button>'}).join("");
+$("empty-flavors").classList.toggle("hidden",found.length!==0);
 renderSelection()
 }
-$("categories").addEventListener("click",function(e){var b=e.target.closest("[data-cat]");if(!b)return;active=b.dataset.cat;renderCategories()});
+$("flavor-search").addEventListener("input",renderCategories);
+document.querySelectorAll("[data-showcase-cat]").forEach(function(button){button.addEventListener("click",function(){active=button.dataset.showcaseCat;$("flavor-search").value="";renderCategories();$("montar").scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"})})});
+$("categories").addEventListener("click",function(e){var b=e.target.closest("[data-cat]");if(!b)return;active=b.dataset.cat;$("flavor-search").value="";renderCategories()});
 $("flavors").addEventListener("click",function(e){var b=e.target.closest("[data-flavor]");if(!b)return;var flavor=b.dataset.flavor;if(selection.includes(flavor))selection=selection.filter(function(s){return s!==flavor});else if(selection.length<4)selection.push(flavor);else toast("O limite é de quatro sabores por cento.");renderCategories()});
 $("quantity").addEventListener("input",renderSelection);
 function summary(){var c=calculation();return "ENCOMENDA DEMONSTRATIVA — NÃO ENVIAR COMO PEDIDO CONFIRMADO\\nGU Doces Gourmet\\nSabores: "+(selection.join(", ")||"Não selecionados")+"\\nQuantidade: "+c.quantity+" cento(s)\\nData: "+formatDate($("order-date").value)+"\\nRecebimento: "+$("delivery").value+"\\nValor: "+(c.total!=null?money(c.total):"A confirmar")+"\\nEntrada prevista: "+(c.total!=null?money(c.total*.5):"A confirmar")+"\\nObservação: "+$("order-note").value+"\\nPreços e disponibilidade sujeitos à confirmação."}
