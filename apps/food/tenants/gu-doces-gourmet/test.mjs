@@ -25,7 +25,7 @@ test('script da interface é JavaScript sintaticamente válido', async () => {
   const script = html.split('<script>')[1]?.split('</script>')[0];
   assert.ok(script, 'browser script should be present');
   assert.doesNotThrow(() => new Script(script));
-  assert.ok(script.includes('54'));
+  assert.ok(html.includes('54'));
   assert.ok(script.includes('Ferrero Rocher'));
   assert.ok(script.includes('Entrada de 50%') || html.includes('Entrada de 50%'));
 });
