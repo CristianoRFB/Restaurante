@@ -43,7 +43,7 @@ async function check(width, height, route, name) {
     await page.locator('[data-action="advance"][data-id="DV-1048"]').last().click();
     const status = await page.locator('.detail-pills .status-tag').textContent();
     if (!status?.includes('Em separação')) failed = true;
-    await page.locator('[data-action="close-detail"]').click();
+    await page.locator('.detail-panel [data-action="close-detail"]').click();
     await page.locator('[data-action="order-filter"][data-status="pronto"]').click();
     const filtered = await page.locator('.ticket').count();
     if (filtered !== 1) failed = true;
