@@ -22,43 +22,105 @@ const html = `<!doctype html>
 </style>
 </head>
 <body>
-<div class="top-note">Demonstração conceitual não oficial · Nenhuma encomenda real será enviada</div>
-<header class="nav"><div class="shell nav-inner">
-<a class="brand" href="/" data-route="/"><span class="seal">GU</span><span>DOCES GOURMET<small>BRIGADEIROS ARTESANAIS</small></span></a>
-<nav class="nav-links" aria-label="Visões demonstrativas"><a href="/" data-route="/" class="nav-link">Cardápio</a><a href="/producao" data-route="/producao" class="nav-link">Produção</a><a href="/gestao" data-route="/gestao" class="nav-link">Gestão</a></nav>
-<a class="nav-cta" href="#montar" data-route="/" data-anchor="montar">Monte seu cento ↗</a>
-</div></header>
+<div class="top-note">Prévia conceitual independente · Sem pedidos ou pagamentos reais</div>
+<header class="nav">
+ <div class="shell nav-inner">
+  <a class="brand" href="/" data-route="/" aria-label="GU Doces Gourmet, voltar para o cardápio"><span class="seal" aria-hidden="true">GU</span><span class="brand-wordmark">GU DOCES GOURMET<small>BRIGADEIROS ARTESANAIS</small></span></a>
+  <nav class="nav-links" aria-label="Alternar visão demonstrativa"><a class="nav-link" href="/" data-route="/">Cardápio</a><a class="nav-link" href="/producao" data-route="/producao">Produção</a><a class="nav-link" href="/gestao" data-route="/gestao">Gestão</a></nav>
+  <a href="#montar" class="nav-cta" data-route="/" data-anchor="montar">Montar meu cento <span aria-hidden="true">↗</span></a>
+ </div>
+</header>
 <main id="root">
-<div id="cliente" class="view">
-<section class="hero"><div class="shell hero-grid"><div class="hero-content">
-<p class="eyebrow">GU · Doces Gourmet · Santa Fé do Sul</p>
-<h1>Pequenos doces.<br><em>Grandes momentos.</em></h1>
-<p>Uma experiência pensada para quem quer escolher cada sabor com carinho. Explore o cardápio e monte uma encomenda de exemplo em poucos passos.</p>
-<div class="actions"><a href="#montar" class="btn btn-primary">Montar meu cento <span aria-hidden="true">↗</span></a><a href="https://drive.google.com/file/d/1kS-INNdpZFQLYvxYaFAAQBBMngii_P7R/view" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">Ver PDF original ↗</a></div>
-<p class="hero-deco" style="margin-top:36px">✦ Sabor de festa, feito à mão.</p>
-</div><div class="hero-art" role="img" aria-label="Ilustração decorativa de quatro brigadeiros artesanais em tons de chocolate, leite, morango e pistache"><div class="plate"></div><div class="sweet s1"></div><div class="sweet s2"></div><div class="sweet s3"></div><div class="sweet s4"></div><div class="hero-ribbon">54 sabores listados no PDF ↗</div></div></div></section>
-<section class="stats"><div class="shell stats-row"><div class="stat"><strong>04</strong><span>categorias de sabores</span></div><div class="stat"><strong>54</strong><span>opções no cardápio informado</span></div><div class="stat"><strong>50%</strong><span>entrada prevista no PDF</span></div></div></section>
-<section class="section" id="montar"><div class="shell"><div class="section-header two-col"><div><p class="eyebrow">Seu cento, do seu jeito</p><h2>Escolha os sabores.<br>O resto fica simples.</h2></div><p class="muted">Selecione até quatro sabores por cento, mesmo combinando categorias. Nesta prévia, pedidos mistos ficam sujeitos à confirmação do preço-base pelo estabelecimento.</p></div>
-<div class="category-tabs" id="categories" role="group" aria-label="Categorias do cardápio"></div>
-<div class="catalog-grid"><section class="catalog-info"><div class="catalog-head"><div><p class="eyebrow" id="cat-eyebrow"></p><h3 id="cat-name"></h3></div><div class="price" id="cat-price"></div></div><p class="muted" id="cat-description"></p><div class="chips" id="flavors" aria-label="Escolha de sabores"></div><p class="helper">Toque nos sabores para selecionar ou remover. Limite: 4 por cento.</p></section>
-<aside class="order-panel" aria-label="Resumo da encomenda de exemplo"><p class="eyebrow">Sua seleção · Demonstração</p><h3>Seu cento especial</h3><div id="selection" class="selected-list" aria-live="polite"></div>
-<div class="field-grid">
-<label class="field">Quantidade de centos<input type="number" id="quantity" min="1" max="20" value="1" inputmode="numeric"></label>
-<label class="field">Data desejada<input type="date" id="order-date"></label>
-<label class="field">Como receber<select id="delivery"><option value="retirada">Retirada (a confirmar)</option><option value="entrega">Entrega (a confirmar)</option></select></label>
-<label class="field">Nome fictício para demo<input type="text" id="demo-name" maxlength="40" placeholder="Ex.: Cliente Exemplo"></label>
-<label class="field full">Observações da demonstração<textarea id="order-note" maxlength="250" placeholder="Ex.: Festa de aniversário; preferência por embalagem especial."></textarea></label></div>
-<hr class="divider"><div class="summary-line"><span>Valor do pedido</span><strong id="order-total" class="total">—</strong></div><div class="summary-line"><span>Entrada de 50% (quando aplicável)</span><strong id="order-deposit">—</strong></div><p id="mix-warning" class="small-note"></p>
-<div class="actions"><button id="add-order" class="btn btn-contrast" type="button">Simular encomenda ↗</button><button id="copy-order" class="btn btn-light" type="button">Copiar resumo</button></div>
-<p class="small-note">A encomenda fica somente neste navegador. Não é enviada à GU e não realiza pagamento.</p>
-</aside></div></div></section>
-<section class="section subtle-bg"><div class="shell"><div class="section-header"><p class="eyebrow">Como funciona de verdade</p><h2>Do sabor à comemoração.</h2></div><div class="steps"><div class="step"><b>01</b><h3>Escolha</h3><p>Até quatro sabores por cento.</p></div><div class="step"><b>02</b><h3>Agende</h3><p>O PDF pede 3 a 5 dias de antecedência.</p></div><div class="step"><b>03</b><h3>Confirme</h3><p>Entrada prevista de 50%, após confirmação da loja.</p></div><div class="step"><b>04</b><h3>Celebre</h3><p>Retirada ou entrega conforme combinado.</p></div></div></div></section>
-<section class="section"><div class="shell two-col"><div><p class="eyebrow">O próximo passo</p><h2>Seu momento merece um doce à altura.</h2><p class="muted">Conheça os sabores anunciados e entre em contato pelo canal oficial para confirmar disponibilidade, valores e datas.</p></div><div class="panel"><h3>Conheça o atendimento oficial</h3><p class="muted">Nesta experiência demonstrativa, o contato vai para os canais publicados no perfil, nunca envia um pedido automaticamente.</p><div class="actions"><a class="btn btn-contrast" href="https://linktr.ee/gu.doces.gourmet" target="_blank" rel="noopener noreferrer">Abrir canais da GU ↗</a><a class="btn btn-light" href="https://www.instagram.com/gu.doces.gourmet/" target="_blank" rel="noopener noreferrer">Instagram ↗</a></div></div></div></section>
-</div>
-<div id="producao" class="view hidden"><section class="view-title"><div class="shell"><p class="eyebrow">Equipe · Simulação local</p><h1>Fila de produção.</h1><p class="muted">Organize as encomendas por etapa, sem planilhas soltas. Os pedidos aqui são exemplos gravados apenas neste navegador.</p></div></section><div class="shell section"><div class="info-banner">Atenção: esta visão não possui autenticação porque é um showroom isolado, sem acesso a pedidos reais. Para uso operacional, exige login e banco de dados.</div><div class="view-actions"><div class="category-tabs" id="production-filters"></div><button class="small-btn secondary" id="reset-demo" type="button">Restaurar dados de exemplo</button></div><div id="production-orders" class="order-list" aria-live="polite"></div></div></div>
-<div id="gestao" class="view hidden"><section class="view-title"><div class="shell"><p class="eyebrow">Painel · Simulação local</p><h1>O controle também é doce.</h1><p class="muted">Uma visão objetiva da agenda, das etapas e dos valores de referência. Sem métricas de vendas inventadas.</p></div></section><div class="shell section"><div class="info-banner">Todos os números abaixo são de pedidos fictícios da demonstração. Alterações de preço são locais e não modificam o cardápio oficial.</div><div class="kpis" id="kpis"></div><div class="panel"><div class="panel-title"><div><p class="eyebrow">Editor ilustrativo</p><h3>Preços por categoria</h3></div><button class="small-btn secondary" id="restore-prices" type="button">Restaurar PDF</button></div><p class="muted">Valores transcritos do PDF publicado em 2025. Antes de vender, confirme se continuam atuais.</p><div class="price-editor" id="prices-editor"></div></div><div class="section-header" style="margin-top:40px"><p class="eyebrow">Próximas datas</p><h2>Agenda de encomendas</h2></div><div class="order-list" id="management-orders"></div></div></div>
+ <div id="cliente" class="view">
+  <section class="hero"><div class="shell hero-grid">
+   <div class="hero-content">
+    <p class="eyebrow">GU Doces Gourmet <span aria-hidden="true"> · </span> Santa Fé do Sul</p>
+    <h1>Seu cento.<br>Seu <em>sabor.</em><br>Sua ocasião.</h1>
+    <p class="hero-copy">São tantos sabores que dá vontade de escolher todos. Agora você pode descobrir suas combinações e montar um cento de brigadeiros, do seu jeito.</p>
+    <div class="actions"><a class="btn btn-primary" href="#montar">Começar pelos sabores <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="https://drive.google.com/file/d/1kS-INNdpZFQLYvxYaFAAQBBMngii_P7R/view" target="_blank" rel="noopener noreferrer">Cardápio original <span aria-hidden="true">↗</span></a></div>
+    <p class="hero-stamp">Feito com atenção a cada detalhe</p>
+   </div>
+   <div class="hero-gallery">
+    <img class="hero-photo primary" src="https://images.unsplash.com/photo-1783286943732-3aad8d4d273c?auto=format&fit=crop&w=1350&q=84" alt="Fotografia ilustrativa de brigadeiros artesanais variados" fetchpriority="high" width="900" height="1100">
+    <img class="hero-photo secondary" src="https://images.unsplash.com/photo-1780682573061-804145b31316?auto=format&fit=crop&w=700&q=82" alt="Fotografia ilustrativa de brigadeiros em diferentes acabamentos" width="440" height="560">
+    <span class="hero-orbit">Cada festa<br>tem seu<br>doce.</span>
+    <span class="hero-corner-label">Imagens ilustrativas, não oficiais</span>
+   </div>
+  </div></section>
+  <section class="stats" aria-label="Como funcionam as encomendas"><div class="shell stats-row">
+   <div class="stat"><span class="stat-index">01.</span><div><strong>54 sabores</strong><span>listados no cardápio fornecido</span></div></div>
+   <div class="stat"><span class="stat-index">02.</span><div><strong>Até 4 por cento</strong><span>combine seus favoritos</span></div></div>
+   <div class="stat"><span class="stat-index">03.</span><div><strong>Sob encomenda</strong><span>organize sua data com antecedência</span></div></div>
+  </div></section>
+  <section class="photo-showcase" aria-labelledby="showcase-title"><div class="shell">
+   <div class="showcase-heading"><div><p class="eyebrow">Escolhas que dão água na boca</p><h2 id="showcase-title">Encontre o seu<br><em>tipo de doce.</em></h2></div><p>Dos sabores tradicionais às combinações mais especiais. Um cardápio para explorar com calma — e escolher sem complicação.</p></div>
+   <div class="showcase-grid">
+    <button class="showcase-card showcase-main" type="button" data-showcase-cat="tradicional" aria-label="Explorar categoria Tradicional"><img class="showcase-photo" src="https://images.unsplash.com/photo-1787788629625-d25a5087f060?auto=format&fit=crop&w=900&q=82" alt="Brigadeiros artesanais em fotografia ilustrativa" loading="lazy" width="800" height="900"><span class="showcase-body"><span><span class="eyebrow">01 / Clássicos</span><h3>Tradicional</h3></span><span class="showcase-arrow" aria-hidden="true">↗</span></span></button>
+    <button class="showcase-card" type="button" data-showcase-cat="premium" aria-label="Explorar categoria Premium"><img class="showcase-photo" src="https://images.unsplash.com/photo-1780682573061-804145b31316?auto=format&fit=crop&w=700&q=82" alt="Seleção de brigadeiros de chocolate, fotografia ilustrativa" loading="lazy" width="600" height="400"><span class="showcase-body"><span><span class="eyebrow">03 / Especiais</span><h3>Premium</h3></span><span class="showcase-arrow" aria-hidden="true">↗</span></span></button>
+    <button class="showcase-card" type="button" data-showcase-cat="luxo" aria-label="Explorar categoria Luxo"><img class="showcase-photo" src="https://images.unsplash.com/photo-1783286943732-3aad8d4d273c?auto=format&fit=crop&w=1350&q=84" alt="Variedade de doces gourmet em fotografia ilustrativa" loading="lazy" width="600" height="400"><span class="showcase-body"><span><span class="eyebrow">04 / Seleção especial</span><h3>Luxo</h3></span><span class="showcase-arrow" aria-hidden="true">↗</span></span></button>
+   </div>
+   <p class="showcase-disclaimer">Fotografias de referência sob licença Unsplash. Elas ilustram os tipos de doces e não representam produtos específicos da GU.</p>
+  </div></section>
+  <section class="section builder" id="montar" aria-labelledby="builder-title"><div class="shell">
+   <div class="builder-head"><div><p class="workshop-label">Monte sua encomenda</p><h2 id="builder-title">Agora vem a melhor parte:<br><em>escolher os sabores.</em></h2></div><p>Selecione uma categoria, descubra os sabores e combine até quatro. A prévia já organiza a encomenda para você.</p></div>
+   <nav class="category-tabs" id="categories" aria-label="Escolha a categoria dos brigadeiros"></nav>
+   <div class="catalog-grid">
+    <section class="catalog-info" aria-label="Escolha de sabores">
+     <div class="catalog-head"><div><p class="eyebrow" id="cat-eyebrow"></p><h3 id="cat-name"></h3></div><p class="price" id="cat-price"></p></div>
+     <p class="muted" id="cat-description"></p>
+     <div class="flavor-toolbar"><label class="flavor-search"><span aria-hidden="true">⌕</span><input id="flavor-search" type="search" placeholder="Buscar nesta categoria" aria-label="Buscar sabor nesta categoria" autocomplete="off"></label><span id="flavor-count" class="flavor-count" aria-live="polite">0 de 4 sabores</span></div>
+     <div class="progress-track" aria-hidden="true"><div id="progress-fill" class="progress-fill"></div></div>
+     <div id="flavors" class="chips" role="group" aria-label="Sabores disponíveis"></div>
+     <p id="empty-flavors" class="helper hidden">Nenhum sabor encontrado. Experimente outro termo.</p>
+     <p class="helper">Marque um sabor para incluir. Toque novamente para remover. Você pode alternar entre as quatro categorias.</p>
+    </section>
+    <aside class="order-panel" aria-labelledby="order-title"><p class="eyebrow">02 / Monte seu pedido</p><h3 id="order-title">Seu cento começa aqui.</h3>
+     <p style="font-size:12px;color:#6c6153">Os sabores escolhidos aparecem abaixo. Revise a data e o tipo de recebimento antes de simular.</p>
+     <div id="selection" class="selected-list" aria-live="polite">Selecione seus sabores.</div>
+     <div class="field-grid">
+      <label class="field">Quantidade de centos<input type="number" id="quantity" min="1" max="20" value="1" inputmode="numeric"></label>
+      <label class="field">Data desejada<input type="date" id="order-date"></label>
+      <label class="field">Recebimento<select id="delivery"><option value="retirada">Retirada (a confirmar)</option><option value="entrega">Entrega (a confirmar)</option></select></label>
+      <label class="field">Nome para a simulação<input type="text" id="demo-name" maxlength="40" autocomplete="off" placeholder="Ex.: Cliente Exemplo"></label>
+      <label class="field full">Observações (opcional)<textarea id="order-note" maxlength="250" placeholder="Ex.: Doces para aniversário; apresentação especial."></textarea></label>
+     </div>
+     <hr class="divider">
+     <div class="summary-line"><span>Valor de referência</span><strong id="order-total" class="total">—</strong></div>
+     <div class="summary-line"><span>Entrada prevista (50%)</span><strong id="order-deposit">—</strong></div>
+     <p class="small-note" id="mix-warning" role="status" aria-live="polite"></p>
+     <div class="actions"><button type="button" class="btn btn-contrast" id="add-order">Ver pedido na produção <span aria-hidden="true">↗</span></button><button type="button" class="btn btn-light" id="copy-order">Copiar resumo</button></div>
+     <p class="small-note">Esta ação cria apenas um pedido fictício neste navegador. Não confirma disponibilidade, não avisa a GU e não realiza pagamento.</p>
+    </aside>
+   </div>
+  </div></section>
+  <section class="section subtle-bg" aria-labelledby="steps-title"><div class="shell"><div class="section-header"><div><p class="eyebrow">O processo de encomenda</p><h2 id="steps-title">Do primeiro sabor<br>até o grande dia.</h2></div><p>O cardápio atual pede de 3 a 5 dias de antecedência e entrada de 50% para confirmar a encomenda. Antes de fechar, converse com a equipe.</p></div><div class="steps">
+   <div class="step"><b>01</b><h3>Escolha</h3><p>Navegue e selecione até quatro sabores por cento.</p></div>
+   <div class="step"><b>02</b><h3>Combine</h3><p>Defina o dia e o tipo de recebimento desejado.</p></div>
+   <div class="step"><b>03</b><h3>Confirme</h3><p>Consulte disponibilidade e sinal diretamente com a GU.</p></div>
+   <div class="step"><b>04</b><h3>Comemore</h3><p>Retirada ou entrega, como combinado com a equipe.</p></div>
+  </div></div></section>
+  <section class="section closing-section"><div class="shell" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-items:center;gap:35px"><div><p class="eyebrow">Feito para momentos especiais</p><h2>Tem coisa que<br>merece um doce.</h2><p class="muted" style="margin-top:18px;max-width:420px">Esta é uma proposta de experiência digital. Para pedidos reais, confirme cardápio, preço e disponibilidade nos canais oficiais.</p></div><div class="panel"><h3>Fale diretamente com a GU.</h3><p>Continue a conversa com quem faz os doces. A demonstração nunca envia pedidos em nome da loja.</p><div class="actions"><a class="btn btn-contrast" href="https://linktr.ee/gu.doces.gourmet" target="_blank" rel="noopener noreferrer">Abrir contatos oficiais ↗</a><a class="btn btn-light" href="https://www.instagram.com/gu.doces.gourmet/" target="_blank" rel="noopener noreferrer">Instagram ↗</a></div></div></div></section>
+ </div>
+ <div id="producao" class="view hidden">
+  <section class="view-title"><div class="shell"><p class="eyebrow">Visão 02 · Operação</p><h1>Bancada de produção.</h1><p>A fila em um só lugar. Encontre a encomenda, consulte a data e acompanhe cada etapa do preparo.</p></div></section>
+  <div class="shell operations-section">
+   <div class="info-banner"><strong>Ambiente ilustrativo.</strong> Os registros abaixo são fictícios e ficam somente neste navegador. Nesta prévia não há login nem banco compartilhado.</div>
+   <div class="view-actions"><div id="production-filters" class="category-tabs" aria-label="Filtrar pedidos por etapa"></div><button id="reset-demo" class="small-btn secondary" type="button">↺ Restaurar pedidos de exemplo</button></div>
+   <div id="production-orders" class="order-list" aria-live="polite"></div>
+  </div>
+ </div>
+ <div id="gestao" class="view hidden">
+  <section class="view-title"><div class="shell"><p class="eyebrow">Visão 03 · Gestão</p><h1>Seu negócio, à vista.</h1><p>Agenda de pedidos, etapas e manutenção de preços de referência — sem gráficos artificiais de faturamento.</p></div></section>
+  <div class="shell operations-section">
+   <div class="info-banner"><strong>Todos os números são simulações.</strong> Editar preços aqui altera apenas esta experiência local, não o cardápio nem o sistema da loja.</div>
+   <div class="kpis" id="kpis"></div>
+   <section class="panel" aria-labelledby="prices-title"><div class="panel-title"><div><p class="eyebrow">Cardápio · Edição local</p><h3 id="prices-title">Preços por categoria</h3></div><button id="restore-prices" class="small-btn secondary" type="button">↺ Restaurar valores</button></div><p class="muted">Referências do PDF compartilhado em 2025. Alterações nesta demonstração refletem no cardápio do mesmo navegador.</p><div class="price-editor" id="prices-editor"></div></section>
+   <div class="management-title"><p class="eyebrow">Visão de encomendas</p><h2>Próximas datas.</h2></div>
+   <div class="order-list" id="management-orders"></div>
+  </div>
+ </div>
 </main>
-<footer class="footer"><div class="shell footer-inner"><div class="brand"><span class="seal">GU</span><span>DOCES GOURMET<small>DEMONSTRAÇÃO CONCEITUAL</small></span></div><div><p>Prévia independente e não oficial, elaborada para apresentar uma possível melhoria digital à GU Doces Gourmet. Produtos, sabores e regras comerciais transcritos do cardápio enviado; imagens são ilustrações autorais em CSS. Não existe integração com a empresa, cobrança, entrega, estoque ou transmissão de dados.</p><a href="https://drive.google.com/file/d/1kS-INNdpZFQLYvxYaFAAQBBMngii_P7R/view" target="_blank" rel="noopener noreferrer" style="font-size:12px;text-decoration:underline">Fonte: cardápio compartilhado</a></div></div></footer>
+<footer class="footer"><div class="shell footer-inner"><a class="brand" href="/" data-route="/"><span class="seal" aria-hidden="true">GU</span><span class="brand-wordmark">GU DOCES GOURMET<small>PRÉVIA CONCEITUAL · NÃO OFICIAL</small></span></a><div><p>Prévia independente, sem vínculo oficial ou encomendas reais. Sabores e regras transcritos do cardápio compartilhado; valores precisam ser confirmados. Fotografias ilustrativas de Rafael Rodrigues e Jonathan Borba sob licença Unsplash, não representam produtos da GU. Dados e alterações de teste são locais a este navegador.</p><a href="https://drive.google.com/file/d/1kS-INNdpZFQLYvxYaFAAQBBMngii_P7R/view" target="_blank" rel="noopener noreferrer">Consultar cardápio de referência ↗</a></div></div></footer>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
