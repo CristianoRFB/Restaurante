@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+// @ts-expect-error jsdom is a runtime dependency here; @types/jsdom is not installed in this project.
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 
@@ -6,7 +7,7 @@ const page = readFileSync('public/demos/delicias-viajantes/index.html', 'utf8');
 function launch() {
   const errors: string[] = [];
   const consoleBridge = new VirtualConsole();
-  consoleBridge.on('jsdomError', (error) => errors.push(error.message));
+  consoleBridge.on('jsdomError', (error: Error) => errors.push(error.message));
   const dom = new JSDOM(page, { runScripts: 'dangerously', url: 'https://preview.local/demos/delicias-viajantes/index.html', virtualConsole: consoleBridge, pretendToBeVisual: true });
   const { document, Event, MouseEvent } = dom.window;
   const click = (selector: string) => {
