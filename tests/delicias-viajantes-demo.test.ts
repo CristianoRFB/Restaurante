@@ -28,8 +28,8 @@ describe('Delícias Viajantes — isolated nonofficial browser demo', () => {
     const t = launch();
     expect(t.errors).toEqual([]);
     expect(t.document.querySelectorAll('.product').length).toBe(6);
-    expect(t.document.body.textContent).toContain('DEMONSTRAÇÃO CONCEITUAL NÃO OFICIAL');
-    expect(t.document.body.textContent).toContain('Não envia pedidos');
+    expect(t.document.body.textContent).toContain('PRÉVIA CONCEITUAL INDEPENDENTE');
+    expect(t.document.body.textContent).toContain('Nenhuma compra, contato ou pagamento é efetivado aqui.');
     t.dom.window.close();
   });
 
@@ -40,9 +40,9 @@ describe('Delícias Viajantes — isolated nonofficial browser demo', () => {
     expect(t.document.querySelector('.preview-box')?.textContent).toContain('Total ilustrativo');
     t.click('[data-action="simulate"]');
     expect(t.document.querySelectorAll('.order-row').length).toBe(1);
-    expect(t.document.querySelector('.status')?.textContent).toContain('Novo');
+    expect(t.document.querySelector('.state')?.textContent).toContain('Novo');
     t.click('[data-action="advance"]');
-    expect(t.document.querySelector('.status')?.textContent).toContain('Separando');
+    expect(t.document.querySelector('.state')?.textContent).toContain('Separando');
     expect(t.errors).toEqual([]);
     t.dom.window.close();
   });
