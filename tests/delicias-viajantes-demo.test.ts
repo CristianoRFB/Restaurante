@@ -10,6 +10,7 @@ function launch() {
   consoleBridge.on('jsdomError', (error: Error) => errors.push(error.message));
   const dom = new JSDOM(page, { runScripts: 'dangerously', url: 'https://preview.local/demos/delicias-viajantes/index.html', virtualConsole: consoleBridge, pretendToBeVisual: true });
   const { document, Event, MouseEvent } = dom.window;
+  dom.window.scrollTo = () => {};
   const click = (selector: string) => {
     const element = document.querySelector(selector);
     expect(element, 'expected element ' + selector).not.toBeNull();
