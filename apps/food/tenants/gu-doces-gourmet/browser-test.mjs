@@ -31,9 +31,11 @@ try {
   assert.match(await card.textContent(),/Aguardando sinal/);
   await card.locator('[data-advance]').click();
   assert.match(await card.textContent(),/Confirmado/);
+  await page.screenshot({path:'/tmp/gu-production-check.png',fullPage:true});
   await page.locator('a[data-route="/gestao"]').first().click();
   await page.waitForURL('**/gestao');
   assert.equal(await page.locator('#management-orders .order-card').filter({hasText:'Cliente Teste E2E'}).count(),1);
+  await page.screenshot({path:'/tmp/gu-gestao-check.png',fullPage:true});
   await page.locator('[data-price="tradicional"]').fill('160');
   await page.locator('[data-price="tradicional"]').dispatchEvent('change');
   await page.locator('a[data-route="/"]').first().click();
@@ -43,6 +45,7 @@ try {
     await page.setViewportSize({width,height:900});
     const sizes = await page.evaluate(() => ({width:document.documentElement.scrollWidth,screen:window.innerWidth}));
     assert.ok(sizes.width <= sizes.screen+2, 'horizontal overflow at '+width+': '+JSON.stringify(sizes));
+    if(width===1440) await page.screenshot({path:'/tmp/gu-desktop-check.png',fullPage:true});
   }
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:'/tmp/gu-mobile-check.png',fullPage:true});
